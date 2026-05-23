@@ -1,0 +1,129 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h2 class="section-title mb-1"><i class="fa-solid fa-chart-bar me-2"></i>Reports & Analytics</h2>
+      <p style="color:#888;font-size:0.9rem;">System-wide statistics and insights</p>
+    </div>
+    <a href="/admin/dashboard" class="btn btn-outline-secondary" style="border-radius:50px;"><i class="fa-solid fa-arrow-left me-2"></i>Dashboard</a>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-4 mb-4 anim-up">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-primary);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Total Books</p><h3><%= totalBooks %></h3></div>
+        <i class="fa-solid fa-book"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-ocean);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Total Users</p><h3><%= totalUsers %></h3></div>
+        <i class="fa-solid fa-users"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-sunset);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Total Borrows</p><h3><%= totalBorrows %></h3></div>
+        <i class="fa-solid fa-bookmark"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-fire);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Overdue</p><h3><%= overdueBorrows %></h3></div>
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-forest);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Research Papers</p><h3><%= totalResearch %></h3></div>
+        <i class="fa-solid fa-flask"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-candy);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Blog Posts</p><h3><%= totalBlogs %></h3></div>
+        <i class="fa-solid fa-newspaper"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-lava);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>E-Books</p><h3><%= totalEbooks %></h3></div>
+        <i class="fa-solid fa-tablet-screen-button"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 anim-up" style="animation-delay:0.1s;">
+  <div class="col-lg-7">
+    <div class="glass-card p-4">
+      <h6 class="section-title mb-3"><i class="fa-solid fa-chart-line me-2"></i>Borrowing Trends (by Month)</h6>
+      <canvas id="borrowChart" height="200"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="glass-card p-4">
+      <h6 class="section-title mb-3"><i class="fa-solid fa-chart-pie me-2"></i>Books by Category</h6>
+      <canvas id="categoryChart" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<script>
+  const borrowsByMonth = <%- JSON.stringify(borrowsByMonth) %>;
+  const booksByCategory = <%- JSON.stringify(booksByCategory) %>;
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const borrowLabels = borrowsByMonth.map(d => months[(d._id || 1) - 1]);
+  const borrowValues = borrowsByMonth.map(d => d.count);
+
+  new Chart(document.getElementById('borrowChart'), {
+    type: 'line',
+    data: {
+      labels: borrowLabels.length ? borrowLabels : ['No data'],
+      datasets: [{
+        label: 'Borrows',
+        data: borrowValues.length ? borrowValues : [0],
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102,126,234,0.1)',
+        borderWidth: 3,
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#667eea',
+        pointRadius: 5
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+  });
+
+  const catLabels = booksByCategory.map(d => d._id || 'Other');
+  const catValues = booksByCategory.map(d => d.count);
+  const colors = ['#667eea','#f093fb','#4facfe','#43e97b','#fa709a','#fee140','#a18cd1','#f77062'];
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: catLabels.length ? catLabels : ['No data'],
+      datasets: [{ data: catValues.length ? catValues : [1], backgroundColor: colors, borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: { responsive: true, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } } }
+  });
+</script>

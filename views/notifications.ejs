@@ -1,0 +1,71 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="d-flex align-items-center justify-content-between mb-4 anim-down">
+  <h2 class="section-title mb-0"><i class="fa-solid fa-bell me-2"></i>Notifications</h2>
+  <% if (notifications.length > 0) { %>
+  <button onclick="markAllRead()" class="btn btn-sm" style="border-radius:50px;background:rgba(102,126,234,0.1);color:#667eea;border:1px solid rgba(102,126,234,0.2);">
+    <i class="fa-solid fa-check-double me-1"></i>Mark all read
+  </button>
+  <% } %>
+</div>
+
+<% if (notifications.length === 0) { %>
+<div class="glass-card p-5 text-center anim-up">
+  <div style="font-size:3rem;margin-bottom:1rem;">🔔</div>
+  <h5 style="color:#555;font-weight:600;">No notifications yet</h5>
+  <p style="color:#aaa;font-size:0.9rem;">You'll see borrow confirmations, reminders, and alerts here.</p>
+</div>
+<% } else { %>
+<div class="glass-card p-3 anim-up">
+  <% for (let n of notifications) { %>
+  <div class="notif-item <%= n.read ? '' : 'unread' %>" data-id="<%= n._id %>">
+    <div class="notif-icon">
+      <% if (n.type === 'borrow_confirm') { %><i class="fa-solid fa-book" style="color:#667eea;"></i>
+      <% } else if (n.type === 'return_reminder') { %><i class="fa-solid fa-clock" style="color:#feca57;"></i>
+      <% } else if (n.type === 'overdue_alert') { %><i class="fa-solid fa-triangle-exclamation" style="color:#f5576c;"></i>
+      <% } else if (n.type === 'reservation_ready') { %><i class="fa-solid fa-circle-check" style="color:#43e97b;"></i>
+      <% } else if (n.type === 'research_approved') { %><i class="fa-solid fa-flask" style="color:#4facfe;"></i>
+      <% } else { %><i class="fa-solid fa-bell" style="color:#a18cd1;"></i>
+      <% } %>
+    </div>
+    <div class="notif-body">
+      <div class="notif-title"><%= n.title %></div>
+      <div class="notif-msg"><%= n.message %></div>
+      <div class="notif-time"><%= new Date(n.createdAt).toLocaleString() %></div>
+    </div>
+    <% if (n.link) { %>
+    <a href="<%= n.link %>" class="notif-link"><i class="fa-solid fa-arrow-right"></i></a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+<% } %>
+
+<style>
+  .notif-item { display:flex; align-items:flex-start; gap:1rem; padding:1rem; border-radius:12px; margin-bottom:0.5rem; transition:all 0.2s; cursor:pointer; }
+  .notif-item.unread { background:rgba(102,126,234,0.06); border-left:3px solid #667eea; }
+  .notif-item:hover { background:rgba(102,126,234,0.08); }
+  .notif-icon { width:40px; height:40px; border-radius:10px; background:rgba(102,126,234,0.1); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; }
+  .notif-body { flex:1; }
+  .notif-title { font-weight:700; color:#1a1a2e; font-size:0.9rem; }
+  .notif-msg { color:#666; font-size:0.83rem; margin-top:0.2rem; }
+  .notif-time { color:#aaa; font-size:0.75rem; margin-top:0.3rem; }
+  .notif-link { color:#667eea; font-size:0.9rem; padding:0.3rem; }
+</style>
+
+<script>
+  async function markAllRead() {
+    await fetch('/notifications/mark-all-read', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+    const badge = document.getElementById('notifBadge');
+    if (badge) badge.style.display = 'none';
+  }
+  document.querySelectorAll('.notif-item').forEach(el => {
+    el.addEventListener('click', async () => {
+      if (el.classList.contains('unread')) {
+        await fetch('/notifications/' + el.dataset.id + '/read', { method: 'POST' });
+        el.classList.remove('unread');
+      }
+    });
+  });
+</script>

@@ -1,0 +1,47 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-7">
+    <div class="text-center mb-4 anim-down">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--grad-candy);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff;box-shadow:0 8px 24px rgba(161,140,209,0.4);">
+        <i class="fa-solid fa-pen-nib"></i>
+      </div>
+      <h2 style="font-size:1.6rem;font-weight:800;background:var(--grad-candy);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Write a Blog Post</h2>
+    </div>
+    <div class="form-wrapper anim-up">
+      <form action="/blogs" method="POST" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Title <span style="color:#f5576c;">*</span></label>
+          <input type="text" name="blog[title]" class="form-control" placeholder="Enter blog title" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="blog[category]" class="form-select">
+            <option value="Other">General</option>
+            <option value="News">News</option>
+            <option value="Events">Events</option>
+            <option value="Tips">Tips & Tricks</option>
+            <option value="Reviews">Reviews</option>
+            <option value="Technology">Technology</option>
+            <option value="Education">Education</option>
+            <option value="Announcements">Announcements</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Content <span style="color:#f5576c;">*</span></label>
+          <textarea name="blog[content]" class="form-control" rows="10" placeholder="Write your blog post here..." required></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Tags <span style="color:#aaa;font-size:0.82rem;">(comma separated)</span></label>
+          <input type="text" name="blog[tags]" class="form-control" placeholder="e.g. books, reading, library" />
+        </div>
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-grad flex-fill" style="padding:0.8rem;">
+            <i class="fa-solid fa-paper-plane me-2"></i>Publish Post
+          </button>
+          <a href="/blogs" class="btn btn-outline-secondary flex-fill" style="border-radius:50px;padding:0.8rem;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

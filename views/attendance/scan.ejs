@@ -1,0 +1,71 @@
+<% layout("/layouts/boilerplate") %>
+
+<style>
+  .scan-card { background:#fff; border-radius:20px; padding:2rem; box-shadow:0 8px 32px rgba(0,0,0,0.1); max-width:420px; margin:0 auto; text-align:center; }
+  .scan-icon { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1rem; }
+  .scan-icon.success { background:rgba(67,233,123,0.15); color:#1a9e4e; }
+  .scan-icon.error   { background:rgba(245,87,108,0.12); color:#c0392b; }
+  .scan-icon.pending { background:rgba(102,126,234,0.12); color:#667eea; }
+</style>
+
+<div class="py-5">
+  <div class="scan-card anim-down">
+    <div id="scanIcon" class="scan-icon pending">
+      <i class="fa-solid fa-qrcode"></i>
+    </div>
+    <h4 id="scanTitle" style="font-weight:800;color:#1a1a2e;margin-bottom:0.5rem;">QR Attendance</h4>
+    <p id="scanMsg" style="color:#888;font-size:0.9rem;margin-bottom:1.5rem;">Verifying your QR code...</p>
+    <div id="scanSpinner" class="mb-3">
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem;color:#667eea;"></i>
+    </div>
+    <a href="/attendance/my" id="backBtn" class="btn btn-grad" style="border-radius:50px;display:none;">
+      <i class="fa-solid fa-calendar-check me-2"></i>View My Attendance
+    </a>
+  </div>
+</div>
+
+<script>
+(async function() {
+  const token = "<%= token %>";
+  const icon    = document.getElementById('scanIcon');
+  const title   = document.getElementById('scanTitle');
+  const msg     = document.getElementById('scanMsg');
+  const spinner = document.getElementById('scanSpinner');
+  const backBtn = document.getElementById('backBtn');
+
+  function done(ok, titleText, msgText, iconClass) {
+    spinner.style.display = 'none';
+    backBtn.style.display = 'inline-block';
+    icon.className = `scan-icon ${iconClass}`;
+    icon.innerHTML = ok
+      ? '<i class="fa-solid fa-circle-check"></i>'
+      : '<i class="fa-solid fa-circle-exclamation"></i>';
+    title.textContent = titleText;
+    msg.textContent   = msgText;
+    if (ok && window.voiceBotSpeak) window.voiceBotSpeak(msgText);
+  }
+
+  if (!token) {
+    done(false, 'Invalid QR', 'No token found. Please scan a valid QR code.', 'error');
+    return;
+  }
+
+  try {
+    const res  = await fetch('/attendance/qr-mark', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json();
+    if (data.success) {
+      done(true, 'Attendance Marked!', data.message, 'success');
+      // Redirect to my attendance after 3s
+      setTimeout(() => { window.location.href = '/attendance/my'; }, 3000);
+    } else {
+      done(false, 'Could Not Mark', data.message, 'error');
+    }
+  } catch(e) {
+    done(false, 'Server Error', 'Could not connect. Please try again.', 'error');
+  }
+})();
+</script>

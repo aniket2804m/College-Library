@@ -1,0 +1,61 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="d-flex align-items-center justify-content-between mb-4 mt-2 anim-down">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-newspaper me-2"></i>Library Blog</h2>
+    <p style="color:#888;font-size:0.9rem;">Insights, updates, and stories from the library</p>
+  </div>
+  <% if (currUser) { %>
+  <a href="/blogs/new" class="btn btn-grad"><i class="fa-solid fa-plus me-2"></i>Write Post</a>
+  <% } %>
+</div>
+
+<% if (!blogs || !blogs.docs || blogs.docs.length === 0) { %>
+<div class="glass-card p-5 text-center anim-up">
+  <div style="font-size:3rem;margin-bottom:1rem;">✍️</div>
+  <h5 style="color:#555;font-weight:600;">No blog posts yet</h5>
+  <p style="color:#aaa;font-size:0.9rem;">Be the first to write a post!</p>
+  <% if (currUser) { %>
+  <a href="/blogs/new" class="btn btn-grad mt-2"><i class="fa-solid fa-plus me-2"></i>Write Post</a>
+  <% } %>
+</div>
+<% } else { %>
+<div class="row g-4 anim-up">
+  <% for (let blog of blogs.docs) { %>
+  <div class="col-md-6 col-lg-4">
+    <a href="/blogs/<%= blog._id %>" class="text-decoration-none">
+      <div class="glass-card overflow-hidden h-100" style="transition:all 0.3s;cursor:pointer;" onmouseover="this.style.transform='translateY(-6px)';this.style.boxShadow='0 16px 40px rgba(102,126,234,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="height:8px;background:var(--grad-primary);"></div>
+        <div class="p-4">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;">
+            <span style="font-size:0.75rem;font-weight:700;background:rgba(102,126,234,0.1);color:#667eea;padding:0.2rem 0.7rem;border-radius:50px;">
+              <%= blog.category || 'General' %>
+            </span>
+          </div>
+          <h5 style="font-weight:700;color:#1a1a2e;font-size:1rem;margin-bottom:0.6rem;line-height:1.4;"><%= blog.title %></h5>
+          <p style="color:#888;font-size:0.85rem;line-height:1.6;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
+            <%= blog.content ? blog.content.substring(0, 120) + '...' : '' %>
+          </p>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.8rem;color:#aaa;border-top:1px solid #f0f0f0;padding-top:0.8rem;">
+            <span><i class="fa-solid fa-user me-1" style="color:#667eea;"></i><%= blog.author ? blog.author.username : 'Unknown' %></span>
+            <span><i class="fa-solid fa-calendar me-1"></i><%= blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : '' %></span>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <% } %>
+</div>
+
+<% if (blogs.totalPages > 1) { %>
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    <% for (let i = 1; i <= blogs.totalPages; i++) { %>
+    <li class="page-item <%= i === blogs.page ? 'active' : '' %>">
+      <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+    </li>
+    <% } %>
+  </ul>
+</nav>
+<% } %>
+<% } %>

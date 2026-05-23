@@ -1,0 +1,252 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<style>
+  .att-card { background:#fff; border-radius:16px; padding:1.5rem; box-shadow:0 4px 20px rgba(0,0,0,0.07); border:1px solid rgba(0,0,0,0.05); }
+  .att-badge-present { background:rgba(67,233,123,0.12); color:#1a9e4e; border-radius:50px; padding:3px 12px; font-size:0.75rem; font-weight:700; }
+  .att-row { display:flex; align-items:center; gap:1rem; padding:0.75rem 0; border-bottom:1px solid #f5f5f5; }
+  .att-row:last-child { border-bottom:none; }
+  .att-date-box { width:48px; height:48px; border-radius:12px; background:var(--grad-primary); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
+  .att-date-box .day { font-size:1.2rem; font-weight:800; line-height:1; }
+  .att-date-box .mon { font-size:0.6rem; font-weight:600; opacity:0.85; }
+
+  /* QR Scanner Modal */
+  #qrScanModal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; }
+  #qrScanModal.active { display:flex; }
+  #qrScanBox { background:#fff; border-radius:24px; overflow:hidden; width:100%; max-width:380px; margin:1rem; box-shadow:0 24px 64px rgba(0,0,0,0.4); }
+  #qrScanHeader { background:linear-gradient(135deg,#667eea,#764ba2); padding:1rem 1.2rem; display:flex; align-items:center; justify-content:space-between; color:#fff; }
+  #qrScanBody { padding:1.2rem; }
+  #qrReader { width:100%; border-radius:12px; overflow:hidden; background:#000; min-height:240px; }
+  #qrScanStatus { margin-top:1rem; padding:10px 14px; border-radius:10px; font-size:0.85rem; font-weight:600; text-align:center; display:none; }
+  #qrScanStatus.ok  { background:rgba(67,233,123,0.15); color:#1a9e4e; border:1px solid rgba(67,233,123,0.3); }
+  #qrScanStatus.err { background:rgba(245,87,108,0.12); color:#c0392b; border:1px solid rgba(245,87,108,0.3); }
+  #qrScanStatus.info{ background:rgba(102,126,234,0.1); color:#667eea; border:1px solid rgba(102,126,234,0.2); }
+</style>
+
+<div class="anim-down mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+  <div>
+    <h2 class="section-title"><i class="fa-solid fa-calendar-check me-2"></i>My Attendance</h2>
+    <p style="color:#888;font-size:0.9rem;">Your library attendance history (last 30 days)</p>
+  </div>
+  <button id="markAttBtn" class="btn btn-grad" onclick="openQrScanner()">
+    <i class="fa-solid fa-qrcode me-2"></i>Mark Today's Attendance
+  </button>
+</div>
+
+<!-- WiFi status indicator -->
+<div id="wifiStatusBar" style="display:none;padding:10px 16px;border-radius:12px;font-size:0.85rem;font-weight:600;margin-bottom:1rem;align-items:center;gap:10px;flex-wrap:wrap;"></div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4 anim-up">
+  <div class="col-6 col-md-3">
+    <div class="att-card text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><%= records.length %></div>
+      <div style="font-size:0.8rem;color:#888;">Days Present</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="att-card text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-forest);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        <%= records.filter(r => r.timeOut).length %>
+      </div>
+      <div style="font-size:0.8rem;color:#888;">Full Days</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="att-card text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-sunset);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">30</div>
+      <div style="font-size:0.8rem;color:#888;">Days Tracked</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="att-card text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-ocean);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        <%= Math.round((records.length / 30) * 100) %>%
+      </div>
+      <div style="font-size:0.8rem;color:#888;">Attendance %</div>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance log -->
+<div class="att-card anim-up">
+  <h5 style="font-weight:700;color:#1a1a2e;margin-bottom:1rem;"><i class="fa-solid fa-list-check me-2" style="color:#667eea;"></i>Attendance Log</h5>
+  <% if (records.length === 0) { %>
+    <div class="text-center py-4" style="color:#aaa;">
+      <i class="fa-solid fa-calendar-xmark" style="font-size:2.5rem;display:block;margin-bottom:0.5rem;"></i>
+      No attendance records yet. Scan the library QR code to get started.
+    </div>
+  <% } else { %>
+    <% for (let r of records) { %>
+    <div class="att-row">
+      <div class="att-date-box">
+        <span class="day"><%= new Date(r.date).getUTCDate() %></span>
+        <span class="mon"><%= new Date(r.date).toLocaleString('default',{month:'short'}) %></span>
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;">
+          <%= new Date(r.date).toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) %>
+        </div>
+        <div style="font-size:0.78rem;color:#888;margin-top:2px;">
+          In: <strong><%= r.timeIn ? new Date(r.timeIn).toLocaleTimeString() : '—' %></strong>
+          <% if (r.timeOut) { %> &nbsp;|&nbsp; Out: <strong><%= new Date(r.timeOut).toLocaleTimeString() %></strong><% } %>
+          <% if (r.markedViaWifi) { %> &nbsp;|&nbsp; <i class="fa-solid fa-wifi me-1" style="color:#43e97b;"></i><%= r.markedViaWifi %><% } %>
+          <% if (r.markedVia === 'qr') { %> &nbsp;|&nbsp; <i class="fa-solid fa-qrcode me-1" style="color:#667eea;"></i>QR Scan<% } %>
+        </div>
+      </div>
+      <span class="att-badge-present"><i class="fa-solid fa-circle-check me-1"></i>Present</span>
+    </div>
+    <% } %>
+  <% } %>
+</div>
+
+<!-- ── QR Scanner Modal ──────────────────────────────────────────────────────── -->
+<div id="qrScanModal">
+  <div id="qrScanBox">
+    <div id="qrScanHeader">
+      <div>
+        <div style="font-weight:800;font-size:1rem;"><i class="fa-solid fa-qrcode me-2"></i>Scan Library QR Code</div>
+        <div style="font-size:0.72rem;opacity:0.8;">Point your camera at the QR shown by the librarian</div>
+      </div>
+      <button onclick="closeQrScanner()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div id="qrScanBody">
+      <!-- html5-qrcode renders into this div -->
+      <div id="qrReader"></div>
+      <div id="qrScanStatus"></div>
+      <div style="margin-top:0.8rem;font-size:0.75rem;color:#aaa;text-align:center;">
+        <i class="fa-solid fa-shield-halved me-1" style="color:#667eea;"></i>
+        Token expires every 30s — scan the current code shown on librarian screen
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- html5-qrcode library -->
+<script src="/js/html5-qrcode.min.js"></script>
+<script>
+let html5QrCode = null;
+let scanDone    = false;
+
+// ── Check WiFi status on load ─────────────────────────────────────────────────
+(async function checkWifi() {
+  const bar = document.getElementById('wifiStatusBar');
+  try {
+    const res  = await fetch('/attendance/wifi-status');
+    const data = await res.json();
+    bar.style.display = 'flex';
+    if (!data.wifiConfigured) {
+      bar.style.cssText += 'background:rgba(102,126,234,0.08);border:1px solid rgba(102,126,234,0.2);color:#555;';
+      bar.innerHTML = `<i class="fa-solid fa-calendar-check" style="color:#667eea;"></i>
+        <span>Scan the library QR code to mark attendance.</span>`;
+    } else if (data.allowed) {
+      bar.style.cssText += 'background:rgba(67,233,123,0.1);border:1px solid rgba(67,233,123,0.3);color:#1a9e4e;';
+      bar.innerHTML = `<i class="fa-solid fa-wifi" style="color:#43e97b;"></i>
+        <span>Connected to <strong>${data.matchedWifi}</strong> — scan the QR to mark attendance.</span>`;
+    } else {
+      bar.style.cssText += 'background:rgba(245,87,108,0.08);border:1px solid rgba(245,87,108,0.25);color:#c0392b;';
+      bar.innerHTML = `<i class="fa-solid fa-wifi" style="color:#f5576c;"></i>
+        <span>Not on library WiFi — connect to the library network first.</span>`;
+    }
+  } catch(e) { /* ignore */ }
+})();
+
+function showScanStatus(msg, type) {
+  const el = document.getElementById('qrScanStatus');
+  el.style.display = 'block';
+  el.className = 'qrScanStatus ' + type;  // ok / err / info
+  // apply inline styles based on type
+  if (type === 'ok')   { el.style.cssText = 'display:block;margin-top:1rem;padding:10px 14px;border-radius:10px;font-size:0.85rem;font-weight:600;text-align:center;background:rgba(67,233,123,0.15);color:#1a9e4e;border:1px solid rgba(67,233,123,0.3);'; }
+  if (type === 'err')  { el.style.cssText = 'display:block;margin-top:1rem;padding:10px 14px;border-radius:10px;font-size:0.85rem;font-weight:600;text-align:center;background:rgba(245,87,108,0.12);color:#c0392b;border:1px solid rgba(245,87,108,0.3);'; }
+  if (type === 'info') { el.style.cssText = 'display:block;margin-top:1rem;padding:10px 14px;border-radius:10px;font-size:0.85rem;font-weight:600;text-align:center;background:rgba(102,126,234,0.1);color:#667eea;border:1px solid rgba(102,126,234,0.2);'; }
+  el.innerHTML = msg;
+}
+
+function openQrScanner() {
+  scanDone = false;
+  document.getElementById('qrScanModal').classList.add('active');
+  document.getElementById('qrScanStatus').style.display = 'none';
+  startScanner();
+}
+
+function closeQrScanner() {
+  stopScanner();
+  document.getElementById('qrScanModal').classList.remove('active');
+}
+
+function startScanner() {
+  if (html5QrCode) { try { html5QrCode.stop(); } catch(e){} }
+
+  html5QrCode = new Html5Qrcode("qrReader");
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0,
+    disableFlip: false,
+  };
+
+  html5QrCode.start(
+    { facingMode: "environment" }, // rear camera
+    config,
+    onScanSuccess,
+    onScanError
+  ).catch(err => {
+    showScanStatus('<i class="fa-solid fa-circle-exclamation me-2"></i>Camera access denied. Please allow camera permission and try again.', 'err');
+  });
+}
+
+function stopScanner() {
+  if (html5QrCode) {
+    html5QrCode.stop().catch(() => {});
+    html5QrCode = null;
+  }
+}
+
+async function onScanSuccess(decodedText) {
+  if (scanDone) return; // prevent double-fire
+  scanDone = true;
+  stopScanner();
+
+  showScanStatus('<i class="fa-solid fa-circle-notch fa-spin me-2"></i>Verifying QR code...', 'info');
+
+  // Extract token from URL or use raw text
+  let token = decodedText;
+  try {
+    const url = new URL(decodedText);
+    token = url.searchParams.get('t') || decodedText;
+  } catch(e) { /* not a URL, use raw */ }
+
+  try {
+    const res  = await fetch('/attendance/qr-mark', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showScanStatus(`<i class="fa-solid fa-circle-check me-2"></i>${data.message}`, 'ok');
+      if (window.voiceBotSpeak) window.voiceBotSpeak(data.message);
+      setTimeout(() => { closeQrScanner(); location.reload(); }, 2500);
+    } else {
+      showScanStatus(`<i class="fa-solid fa-circle-exclamation me-2"></i>${data.message}`, 'err');
+      // Allow retry after 3s
+      setTimeout(() => { scanDone = false; startScanner(); }, 3000);
+    }
+  } catch(e) {
+    showScanStatus('<i class="fa-solid fa-circle-exclamation me-2"></i>Server error. Please try again.', 'err');
+    setTimeout(() => { scanDone = false; startScanner(); }, 3000);
+  }
+}
+
+function onScanError(err) {
+  // Suppress — fires constantly while scanning, not a real error
+}
+
+// Close modal on backdrop click
+document.getElementById('qrScanModal').addEventListener('click', function(e) {
+  if (e.target === this) closeQrScanner();
+});
+</script>

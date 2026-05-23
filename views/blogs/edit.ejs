@@ -1,0 +1,47 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-7">
+    <div class="text-center mb-4 anim-down">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--grad-sunset);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff;box-shadow:0 8px 24px rgba(250,112,154,0.4);">
+        <i class="fa-solid fa-pen"></i>
+      </div>
+      <h2 style="font-size:1.6rem;font-weight:800;background:var(--grad-sunset);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Edit Blog Post</h2>
+    </div>
+    <div class="form-wrapper anim-up">
+      <form action="/blogs/<%= blog._id %>?_method=PUT" method="POST" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Title</label>
+          <input type="text" name="blog[title]" class="form-control" value="<%= blog.title %>" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="blog[category]" class="form-select">
+            <option value="Other" <%= blog.category === 'Other' ? 'selected' : '' %>>General</option>
+            <option value="News" <%= blog.category === 'News' ? 'selected' : '' %>>News</option>
+            <option value="Events" <%= blog.category === 'Events' ? 'selected' : '' %>>Events</option>
+            <option value="Tips" <%= blog.category === 'Tips' ? 'selected' : '' %>>Tips & Tricks</option>
+            <option value="Reviews" <%= blog.category === 'Reviews' ? 'selected' : '' %>>Reviews</option>
+            <option value="Technology" <%= blog.category === 'Technology' ? 'selected' : '' %>>Technology</option>
+            <option value="Education" <%= blog.category === 'Education' ? 'selected' : '' %>>Education</option>
+            <option value="Announcements" <%= blog.category === 'Announcements' ? 'selected' : '' %>>Announcements</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Content</label>
+          <textarea name="blog[content]" class="form-control" rows="10" required><%= blog.content %></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Tags</label>
+          <input type="text" name="blog[tags]" class="form-control" value="<%= blog.tags ? blog.tags.join(', ') : '' %>" />
+        </div>
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-grad flex-fill" style="padding:0.8rem;">
+            <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+          </button>
+          <a href="/blogs/<%= blog._id %>" class="btn btn-outline-secondary flex-fill" style="border-radius:50px;padding:0.8rem;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

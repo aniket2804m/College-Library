@@ -1,0 +1,51 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="anim-down mb-4">
+  <h2 class="section-title"><i class="fa-solid fa-bookmark me-2"></i>My Reservations</h2>
+  <p style="color:#888;font-size:0.9rem;">Books you've reserved — we'll notify you when they're available</p>
+</div>
+
+<% if (!reservations || reservations.length === 0) { %>
+<div class="glass-card p-5 text-center anim-up">
+  <div style="font-size:3rem;margin-bottom:1rem;">📌</div>
+  <h5 style="color:#555;font-weight:600;">No reservations</h5>
+  <p style="color:#aaa;font-size:0.9rem;">When a book you want is out of stock, you can reserve it.</p>
+  <a href="/listings" class="btn btn-grad mt-2"><i class="fa-solid fa-book me-2"></i>Browse Books</a>
+</div>
+<% } else { %>
+<div class="row g-4 anim-up">
+  <% for (let r of reservations) { %>
+  <div class="col-md-6 col-lg-4">
+    <div class="glass-card p-4 h-100">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <% if (r.status === 'Ready') { %>
+        <span class="badge" style="background:var(--grad-forest);">✅ Ready to Borrow!</span>
+        <% } else if (r.status === 'Pending') { %>
+        <span class="badge" style="background:var(--grad-ocean);">⏳ Pending</span>
+        <% } else if (r.status === 'Expired') { %>
+        <span class="badge" style="background:var(--grad-lava);">Expired</span>
+        <% } else { %>
+        <span class="badge" style="background:#ccc;color:#555;"><%= r.status %></span>
+        <% } %>
+        <span style="font-size:0.75rem;color:#aaa;"><%= new Date(r.reservedAt).toLocaleDateString() %></span>
+      </div>
+      <h6 style="font-weight:700;color:#1a1a2e;margin-bottom:0.5rem;"><%= r.book ? r.book.title : 'N/A' %></h6>
+      <% if (r.book && (r.book.author || r.book.country)) { %>
+      <p style="font-size:0.82rem;color:#888;margin-bottom:1rem;"><i class="fa-solid fa-user me-1" style="color:#667eea;"></i><%= r.book.author || r.book.country %></p>
+      <% } %>
+      <% if (r.expiresAt) { %>
+      <p style="font-size:0.78rem;color:#aaa;margin-bottom:1rem;"><i class="fa-solid fa-clock me-1"></i>Expires: <%= new Date(r.expiresAt).toLocaleDateString() %></p>
+      <% } %>
+      <div class="d-flex gap-2">
+        <% if (r.status === 'Ready' && r.book) { %>
+        <a href="/listings/<%= r.book._id %>" class="btn btn-sm flex-fill btn-grad" style="font-size:0.82rem;">Borrow Now</a>
+        <% } %>
+        <form method="POST" action="/reservations/<%= r._id %>/cancel" class="flex-fill">
+          <button type="submit" class="btn btn-sm w-100" style="border-radius:50px;background:rgba(245,87,108,0.1);color:#f5576c;border:1px solid rgba(245,87,108,0.2);font-size:0.82rem;">Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+<% } %>

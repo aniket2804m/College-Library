@@ -1,0 +1,230 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4">
+  <h2 class="section-title"><i class="fa-solid fa-chart-line me-2"></i>Admin Dashboard</h2>
+  <p style="color:#888;font-size:0.9rem;">Library system overview and analytics</p>
+</div>
+
+<!-- AI Insights Banner -->
+<div id="aiInsightsBar" class="glass-card p-3 mb-4 anim-down" style="background:linear-gradient(135deg,rgba(102,126,234,0.07),rgba(240,147,251,0.07));border:1px solid rgba(102,126,234,0.15);display:none;">
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <div style="width:32px;height:32px;border-radius:8px;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.85rem;flex-shrink:0;"><i class="fa-solid fa-robot"></i></div>
+    <span style="font-weight:700;color:#1a1a2e;font-size:0.9rem;">AI Insights</span>
+  </div>
+  <div id="aiInsightsList" class="d-flex flex-wrap gap-2"></div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-4 mb-4 anim-up">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-primary);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Total Books</p><h3><%= stats.totalBooks || 0 %></h3></div>
+        <i class="fa-solid fa-book"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-ocean);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Total Users</p><h3><%= stats.totalUsers || 0 %></h3></div>
+        <i class="fa-solid fa-users"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-sunset);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Active Borrows</p><h3><%= stats.activeBorrows || 0 %></h3></div>
+        <i class="fa-solid fa-bookmark"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:var(--grad-forest);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><p>Pending Papers</p><h3><%= stats.pendingResearch || 0 %></h3></div>
+        <i class="fa-solid fa-flask"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4 anim-up" style="animation-delay:0.1s;">
+  <div class="col-lg-6">
+    <div class="glass-card p-4">
+      <h6 class="section-title mb-3"><i class="fa-solid fa-chart-bar me-2"></i>Books by Category</h6>
+      <div style="position:relative;width:100%;height:280px;">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="glass-card p-4">
+      <h6 class="section-title mb-3"><i class="fa-solid fa-fire me-2"></i>Most Popular Books</h6>
+      <% if (popularBooks && popularBooks.length > 0) { %>
+      <% for (let [i, book] of popularBooks.entries()) { %>
+      <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">
+        <div style="width:28px;height:28px;border-radius:8px;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;font-weight:700;flex-shrink:0;"><%= i+1 %></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;color:#1a1a2e;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= book.title %></div>
+          <div style="font-size:0.75rem;color:#aaa;"><%= book.borrowCount %> borrows</div>
+        </div>
+        <div style="width:80px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;background:var(--grad-primary);width:<%= Math.min(100, (book.borrowCount / (popularBooks[0].borrowCount || 1)) * 100) %>%;border-radius:3px;"></div>
+        </div>
+      </div>
+      <% } %>
+      <% } else { %>
+      <p style="color:#aaa;text-align:center;padding:1rem 0;font-size:0.9rem;">No borrow data yet.</p>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-4 mb-4 anim-up" style="animation-delay:0.15s;">
+  <div class="col-md-3">
+    <a href="/admin/users" class="text-decoration-none">
+      <div class="glass-card p-3 d-flex align-items-center gap-3" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--grad-candy);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;"><i class="fa-solid fa-users"></i></div>
+        <div><div style="font-weight:700;color:#1a1a2e;font-size:0.88rem;">Users</div><div style="font-size:0.75rem;color:#888;"><%= stats.totalUsers %> total</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="/admin/borrows" class="text-decoration-none">
+      <div class="glass-card p-3 d-flex align-items-center gap-3" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--grad-lava);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;"><i class="fa-solid fa-book-open"></i></div>
+        <div><div style="font-weight:700;color:#1a1a2e;font-size:0.88rem;">Borrows</div><div style="font-size:0.75rem;color:#888;"><%= stats.activeBorrows %> active</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="/admin/reports" class="text-decoration-none">
+      <div class="glass-card p-3 d-flex align-items-center gap-3" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--grad-aurora);display:flex;align-items:center;justify-content:center;color:#1a1a2e;font-size:1.1rem;flex-shrink:0;"><i class="fa-solid fa-chart-bar"></i></div>
+        <div><div style="font-weight:700;color:#1a1a2e;font-size:0.88rem;">Reports</div><div style="font-size:0.75rem;color:#888;">Analytics</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="/admin/research" class="text-decoration-none">
+      <div class="glass-card p-3 d-flex align-items-center gap-3" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--grad-forest);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;"><i class="fa-solid fa-flask"></i></div>
+        <div><div style="font-weight:700;color:#1a1a2e;font-size:0.88rem;">Research</div><div style="font-size:0.75rem;color:#888;"><%= stats.pendingResearch %> pending</div></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Recent Borrows + Overdue -->
+<div class="row g-4 anim-up" style="animation-delay:0.2s;">
+  <div class="col-lg-7">
+    <div class="glass-card p-4">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i>Recent Activity</h5>
+      <% if (recentBorrows && recentBorrows.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>User</th><th>Book</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody>
+            <% for (let b of recentBorrows.slice(0,6)) { %>
+            <tr>
+              <td style="font-size:0.85rem;"><i class="fa-solid fa-user me-1" style="color:#667eea;"></i><%= b.borrower ? b.borrower.username : 'N/A' %></td>
+              <td style="font-size:0.85rem;"><%= b.book ? b.book.title : 'N/A' %></td>
+              <td style="font-size:0.82rem;color:#888;"><%= b.dueDate ? new Date(b.dueDate).toLocaleDateString() : '-' %></td>
+              <td>
+                <% if (b.status === 'Returned') { %><span class="badge" style="background:var(--grad-forest);font-size:0.7rem;">Returned</span>
+                <% } else if (b.status === 'Overdue') { %><span class="badge" style="background:var(--grad-fire);font-size:0.7rem;">Overdue</span>
+                <% } else { %><span class="badge" style="background:var(--grad-sunset);font-size:0.7rem;">Active</span><% } %>
+              </td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <% } else { %>
+      <div class="text-center py-4" style="color:#aaa;font-size:0.9rem;"><i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>No borrow records yet.</div>
+      <% } %>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="glass-card p-4">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-user-clock me-2"></i>Recent Users</h5>
+      <% if (recentUsers && recentUsers.length > 0) { %>
+      <% for (let u of recentUsers) { %>
+      <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;padding:0.5rem;border-radius:10px;background:rgba(102,126,234,0.04);">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;flex-shrink:0;"><%= u.username.charAt(0).toUpperCase() %></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;color:#1a1a2e;font-size:0.88rem;"><%= u.username %></div>
+          <div style="font-size:0.75rem;color:#aaa;"><%= u.email %></div>
+        </div>
+        <div style="font-size:0.72rem;color:#aaa;"><%= new Date(u.createdAt).toLocaleDateString() %></div>
+      </div>
+      <% } %>
+      <% } else { %>
+      <p style="color:#aaa;text-align:center;font-size:0.9rem;padding:1rem 0;">No users yet.</p>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="/js/chart.umd.min.js"></script>
+<script>
+  fetch('/admin/stats')
+    .then(r => r.json())
+    .then(data => {
+      const ctx = document.getElementById('categoryChart');
+      if (!ctx || !data.booksByCategory) return;
+      const labels = data.booksByCategory.map(c => c._id || 'Other');
+      const values = data.booksByCategory.map(c => c.count);
+      const colors = ['#667eea','#f093fb','#4facfe','#43e97b','#fa709a','#fee140','#a18cd1','#f77062','#84fab0','#fbc2eb'];
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0, hoverOffset: 8 }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 11 },
+                padding: 10,
+                boxWidth: 12,
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.label}: ${ctx.parsed} books`
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }).catch(() => {});
+</script>
+
+<script>
+// Load AI Insights
+fetch('/api/admin/ai-insights')
+  .then(r => r.json())
+  .then(data => {
+    if (!data.insights || data.insights.length === 0) return;
+    const bar = document.getElementById('aiInsightsBar');
+    const list = document.getElementById('aiInsightsList');
+    const colors = { positive: 'rgba(67,233,123,0.12)', warning: 'rgba(255,159,67,0.12)', neutral: 'rgba(102,126,234,0.1)' };
+    const borders = { positive: 'rgba(67,233,123,0.3)', warning: 'rgba(255,159,67,0.3)', neutral: 'rgba(102,126,234,0.2)' };
+    data.insights.forEach(ins => {
+      const span = document.createElement('span');
+      span.style.cssText = `background:${colors[ins.type]||colors.neutral};border:1px solid ${borders[ins.type]||borders.neutral};border-radius:50px;padding:0.35rem 0.9rem;font-size:0.8rem;color:#1a1a2e;`;
+      span.textContent = `${ins.icon} ${ins.text}`;
+      list.appendChild(span);
+    });
+    bar.style.display = 'block';
+  }).catch(() => {});
+</script>

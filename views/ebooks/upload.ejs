@@ -1,0 +1,69 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-7">
+    <div class="text-center mb-4 anim-down">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--grad-ocean);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff;box-shadow:0 8px 24px rgba(79,172,254,0.4);">
+        <i class="fa-solid fa-tablet-screen-button"></i>
+      </div>
+      <h2 style="font-size:1.6rem;font-weight:800;background:var(--grad-ocean);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Upload E-Book</h2>
+      <p style="color:#888;font-size:0.9rem;">Add a digital book to the library collection</p>
+    </div>
+    <div class="form-wrapper anim-up">
+      <form action="/ebooks" method="POST" enctype="multipart/form-data" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Title <span style="color:#f5576c;">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="Book title" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Author <span style="color:#f5576c;">*</span></label>
+          <input type="text" name="author" class="form-control" placeholder="Author name" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="Brief description..."></textarea>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+              <% ['Fiction','Non-Fiction','Science','Technology','History','Biography','Self-Help','Business','Education','Programming','Mathematics','Literature','Philosophy','Other'].forEach(cat => { %>
+              <option value="<%= cat %>"><%= cat %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Language</label>
+            <input type="text" name="language" class="form-control" value="English" />
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <label class="form-label">Pages</label>
+            <input type="number" name="pages" class="form-control" placeholder="e.g. 320" min="1" />
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Published Year</label>
+            <input type="number" name="publishedYear" class="form-control" placeholder="e.g. 2023" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Tags <span style="color:#aaa;font-size:0.82rem;">(comma separated)</span></label>
+          <input type="text" name="tags" class="form-control" placeholder="e.g. programming, python, beginner" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">PDF File <span style="color:#f5576c;">*</span></label>
+          <input type="file" name="pdfFile" class="form-control" accept=".pdf" required />
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Cover Image</label>
+          <input type="file" name="coverImage" class="form-control" accept="image/*" />
+        </div>
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-grad flex-fill" style="padding:0.8rem;"><i class="fa-solid fa-upload me-2"></i>Upload E-Book</button>
+          <a href="/ebooks" class="btn btn-outline-secondary flex-fill" style="border-radius:50px;padding:0.8rem;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

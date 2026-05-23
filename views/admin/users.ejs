@@ -1,0 +1,118 @@
+<% layout("/layouts/admin") %>
+
+<div class="py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 anim-down">
+    <h2 class="section-title mb-0"><i class="fa-solid fa-users me-2"></i>User Management</h2>
+    <div class="d-flex gap-2">
+      <a href="/admin/users/pending" class="btn btn-warning" style="border-radius:50px;font-size:0.85rem;">
+        <i class="fa-solid fa-user-clock me-1"></i>Pending
+        <% if (pendingCount > 0) { %><span class="badge bg-dark ms-1"><%= pendingCount %></span><% } %>
+      </a>
+      <% if (isAdmin) { %>
+      <a href="/admin/users/add" class="btn btn-grad" style="font-size:0.85rem;">
+        <i class="fa-solid fa-user-plus me-1"></i>Add User
+      </a>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Role Legend -->
+  <div class="glass-card p-3 mb-4 anim-down" style="animation-delay:0.05s;">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+      <span style="font-size:0.82rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;">Role Legend:</span>
+      <span class="badge bg-danger px-3 py-2"><i class="fa-solid fa-shield-halved me-1"></i>Admin — Full access</span>
+      <span class="badge bg-warning text-dark px-3 py-2"><i class="fa-solid fa-book me-1"></i>Librarian — Manage books &amp; borrows</span>
+      <span class="badge bg-primary px-3 py-2"><i class="fa-solid fa-user me-1"></i>User — Standard access</span>
+    </div>
+  </div>
+
+  <div class="glass-card p-4 anim-up">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Borrowed</th>
+            <th>Fines</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(user => { %>
+          <tr>
+            <td><strong><%= user.username %></strong></td>
+            <td style="font-size:0.88rem;color:#666;"><%= user.email %></td>
+            <td>
+              <span class="badge bg-<%= user.role === 'admin' ? 'danger' : user.role === 'librarian' ? 'warning text-dark' : 'primary' %>">
+                <%= user.role %>
+              </span>
+            </td>
+            <td><%= user.totalBorrowed || 0 %></td>
+            <td>₹<%= user.totalFines || 0 %></td>
+            <td>
+              <span class="badge bg-<%= user.isActive ? 'success' : 'secondary' %>">
+                <%= user.isActive ? 'Active' : 'Inactive' %>
+              </span>
+              <% if (!user.isApproved) { %>
+              <span class="badge bg-warning text-dark ms-1">Pending</span>
+              <% } %>
+            </td>
+            <td style="font-size:0.82rem;color:#888;"><%= user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-' %></td>
+            <td>
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <!-- Approve button for unapproved users -->
+                <% if (!user.isApproved) { %>
+                <form method="POST" action="/admin/users/<%= user._id %>/approve">
+                  <button class="btn btn-sm btn-success" style="border-radius:50px;font-size:0.78rem;">
+                    <i class="fa-solid fa-check me-1"></i>Approve
+                  </button>
+                </form>
+                <% } %>
+                <!-- Toggle Status — librarian can only toggle regular users -->
+                <% if (isAdmin || user.role === 'user') { %>
+                <form method="POST" action="/admin/users/<%= user._id %>/toggle-status">
+                  <button class="btn btn-sm btn-<%= user.isActive ? 'warning' : 'success' %>" style="border-radius:50px;font-size:0.78rem;">
+                    <%= user.isActive ? 'Deactivate' : 'Activate' %>
+                  </button>
+                </form>
+                <% } %>
+                <!-- Role Change — admin only -->
+                <% if (isAdmin) { %>
+                <form method="POST" action="/admin/users/<%= user._id %>/role" class="d-flex gap-1 align-items-center">
+                  <select name="role" class="form-select form-select-sm" style="border-radius:50px;font-size:0.78rem;min-width:100px;">
+                    <option value="user"      <%= user.role === 'user'      ? 'selected' : '' %>>User</option>
+                    <option value="librarian" <%= user.role === 'librarian' ? 'selected' : '' %>>Librarian</option>
+                    <option value="admin"     <%= user.role === 'admin'     ? 'selected' : '' %>>Admin</option>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-info" style="border-radius:50px;font-size:0.78rem;">Set</button>
+                </form>
+                <!-- Delete — admin only -->
+                <form method="POST" action="/admin/users/<%= user._id %>/delete" onsubmit="return confirm('Delete user <%= user.username %>?')">
+                  <button class="btn btn-sm btn-outline-danger" style="border-radius:50px;font-size:0.78rem;"><i class="fa-solid fa-trash"></i></button>
+                </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+        <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+      </li>
+      <% } %>
+    </ul>
+  </nav>
+  <% } %>
+</div>

@@ -1,0 +1,46 @@
+<% layout("/layouts/admin") %>
+
+<div class="py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 anim-down">
+    <h2 class="section-title mb-0"><i class="fa-solid fa-tablet-screen-button me-2"></i>E-Book Management</h2>
+    <div class="d-flex gap-2">
+      <a href="/admin/ebooks/upload" class="btn btn-grad"><i class="fa-solid fa-plus me-2"></i>Upload E-Book</a>
+      <a href="/admin/dashboard" class="btn btn-outline-secondary" style="border-radius:50px;"><i class="fa-solid fa-arrow-left me-2"></i>Dashboard</a>
+    </div>
+  </div>
+
+  <div class="glass-card p-4 anim-up">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:#1a1a2e;">
+          <tr><th>Title</th><th>Author</th><th>Category</th><th>Downloads</th><th>Views</th><th>Uploaded By</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <% ebooks.forEach(ebook => { %>
+          <tr>
+            <td style="font-weight:600;font-size:0.88rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= ebook.title %></td>
+            <td style="font-size:0.85rem;"><%= ebook.author || '-' %></td>
+            <td><span class="badge bg-info text-dark" style="font-size:0.72rem;"><%= ebook.category || '-' %></span></td>
+            <td style="font-size:0.85rem;"><%= ebook.downloads || 0 %></td>
+            <td style="font-size:0.85rem;"><%= ebook.views || 0 %></td>
+            <td style="font-size:0.82rem;color:#888;"><%= ebook.uploadedBy ? ebook.uploadedBy.username : '-' %></td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="/ebooks/<%= ebook._id %>" class="btn btn-sm btn-outline-primary" style="border-radius:50px;font-size:0.75rem;">View</a>
+                <% if (isAdmin) { %>
+                <form method="POST" action="/admin/ebooks/<%= ebook._id %>/delete" onsubmit="return confirm('Delete this e-book?')">
+                  <button class="btn btn-sm btn-outline-danger" style="border-radius:50px;font-size:0.75rem;">Delete</button>
+                </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+          <% if (ebooks.length === 0) { %>
+          <tr><td colspan="7" class="text-center py-4" style="color:#aaa;">No e-books found.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

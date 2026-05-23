@@ -1,0 +1,129 @@
+<nav class="navbar navbar-expand-lg custom-navbar sticky-top">
+  <div class="container-fluid px-3">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+      <i class="fa-solid fa-book-open" style="font-size:1.4rem;background:var(--grad-ocean);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
+      <span>BookShelf</span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+      <span style="display:flex;flex-direction:column;gap:5px;width:22px;">
+        <span style="height:2px;background:#fff;border-radius:2px;display:block;"></span>
+        <span style="height:2px;background:#fff;border-radius:2px;display:block;"></span>
+        <span style="height:2px;background:#fff;border-radius:2px;display:block;"></span>
+      </span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <div class="navbar-nav me-3">
+        <a class="nav-link nav-pill" href="/"><i class="fa-solid fa-house me-1"></i>Home</a>
+        <a class="nav-link nav-pill" href="/listings"><i class="fa-solid fa-book me-1"></i>Books</a>
+        <a class="nav-link nav-pill" href="/ebooks"><i class="fa-solid fa-tablet-screen-button me-1"></i>E-Books</a>
+        <a class="nav-link nav-pill" href="/blogs"><i class="fa-solid fa-newspaper me-1"></i>Blogs</a>
+        <a class="nav-link nav-pill" href="/research"><i class="fa-solid fa-flask me-1"></i>Research</a>
+        <a class="nav-link nav-pill" href="/recommendations"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>For You</a>
+        <a class="nav-link nav-pill" href="/notices"><i class="fa-solid fa-bullhorn me-1"></i>Notices</a>
+        <% if (currUser) { %>
+        <a class="nav-link nav-pill" href="/borrow/current"><i class="fa-solid fa-bookmark me-1"></i>My Books</a>
+        <a class="nav-link nav-pill" href="/attendance/my"><i class="fa-solid fa-calendar-check me-1"></i>Attendance</a>
+        <a class="nav-link nav-pill" href="/blogs/new"><i class="fa-solid fa-pen-nib me-1"></i>Write</a>
+        <a class="nav-link nav-pill" href="/research/upload"><i class="fa-solid fa-upload me-1"></i>Upload</a>
+        <% } %>
+      </div>
+      <div class="mx-auto" style="position:relative;min-width:220px;max-width:340px;flex:1;">
+        <div style="position:relative;display:flex;align-items:center;">
+          <input type="text" id="searchInput" class="form-control"
+            style="border-radius:50px;padding:0.45rem 3rem 0.45rem 1.2rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;font-size:0.88rem;"
+            placeholder="Search books..." />
+          <button id="voiceSearchBtn" title="Voice Search"
+            style="position:absolute;right:6px;width:32px;height:32px;border-radius:50%;background:var(--grad-primary);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.8rem;transition:all 0.3s;">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+        </div>
+        <div id="suggestions" style="position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:1050;display:none;max-height:220px;overflow-y:auto;"></div>
+      </div>
+      <div class="navbar-nav ms-3">
+        <% if (isAdmin || isLibrarian) { %>
+        <a class="nav-link nav-pill" href="/admin/dashboard"><i class="fa-solid fa-chart-line me-1"></i>Dashboard</a>
+        <a class="nav-link nav-pill" href="/admin/books/new"><i class="fa-solid fa-plus me-1"></i>Add Book</a>
+        <a class="nav-link nav-pill" href="/qr/scanner"><i class="fa-solid fa-qrcode me-1"></i>QR</a>
+        <% } %>
+        <!-- Voice Assistant Button is in the layout (floating) -->
+        <% if (!currUser) { %>
+        <a class="nav-link nav-pill" href="/signup"><i class="fa-solid fa-user-plus me-1"></i>Sign up</a>
+        <a class="nav-link nav-pill" href="/login" style="background:rgba(102,126,234,0.3);"><i class="fa-solid fa-right-to-bracket me-1"></i>Log in</a>
+        <% } else { %>
+        <a class="nav-link nav-pill" href="/notifications" style="position:relative;">
+          <i class="fa-solid fa-bell"></i>
+          <% if (unreadNotifCount > 0) { %>
+          <span id="notifBadge" style="position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--grad-fire);font-size:0.6rem;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;"><%= unreadNotifCount %></span>
+          <% } %>
+        </a>
+        <a class="nav-link nav-pill" href="/profile"><i class="fa-solid fa-circle-user me-1" style="color:#4facfe;"></i><%= currUser.username %></a>
+        <a class="nav-link nav-pill" href="/logout"><i class="fa-solid fa-right-from-bracket me-1"></i>Log out</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+  .custom-navbar { background: var(--grad-navbar) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.35); padding: 0.55rem 0; }
+  .navbar-brand { font-size: 1.5rem !important; font-weight: 800 !important; background: linear-gradient(135deg, #667eea, #f093fb, #4facfe) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+  .nav-pill { border-radius: 20px !important; padding: 0.35rem 0.85rem !important; font-size: 0.85rem !important; font-weight: 500 !important; color: rgba(255,255,255,0.85) !important; transition: all 0.25s ease !important; margin: 0 1px; }
+  .nav-pill:hover { background: rgba(255,255,255,0.14) !important; color: #fff !important; transform: translateY(-1px); }
+  #searchInput::placeholder { color: rgba(255,255,255,0.5); }
+  #searchInput:focus { outline: none; box-shadow: 0 0 0 2px rgba(102,126,234,0.5); background: rgba(255,255,255,0.18) !important; }
+  .suggestion-item { padding: 0.55rem 1rem; cursor: pointer; font-size: 0.9rem; color: #333; transition: background 0.2s; }
+  .suggestion-item:hover { background: rgba(102,126,234,0.08); }
+  #voiceSearchBtn:hover { transform: scale(1.15); }
+  #voiceSearchBtn.listening { background: var(--grad-fire) !important; animation: voicePulse 1.5s infinite; }
+  .va-btn.va-listening { background: var(--grad-fire) !important; animation: voicePulse 1.5s infinite; }
+  @keyframes voicePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(245,87,108,0.5); } 50% { box-shadow: 0 0 0 8px rgba(245,87,108,0); } }
+</style>
+
+<script>
+  // ── Search bar autocomplete ──────────────────────────────────────────────
+  const searchInput = document.getElementById("searchInput");
+  const suggestionsBox = document.getElementById("suggestions");
+  const sampleBooks = ["Python Crash Course","Effective Java","Clean Code","The Pragmatic Programmer","Design Patterns","Head First JavaScript","You Don't Know JS","Operating System Concepts","Database System Concepts","Artificial Intelligence","Deep Learning with Python","Data Structures and Algorithms","Programming Rust","Go Programming Language"];
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      const query = this.value.toLowerCase(); suggestionsBox.innerHTML = "";
+      if (query.length > 0) {
+        const filtered = sampleBooks.filter(b => b.toLowerCase().includes(query));
+        if (filtered.length > 0) { filtered.forEach(book => { const div = document.createElement("div"); div.className = "suggestion-item"; div.textContent = book; div.onclick = () => { searchInput.value = book; suggestionsBox.style.display = "none"; goSearch(book); }; suggestionsBox.appendChild(div); }); suggestionsBox.style.display = "block"; } else { suggestionsBox.style.display = "none"; }
+      } else { suggestionsBox.style.display = "none"; }
+    });
+    searchInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && this.value.trim()) {
+        suggestionsBox.style.display = "none";
+        goSearch(this.value.trim());
+      }
+    });
+    document.addEventListener("click", e => { if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) suggestionsBox.style.display = "none"; });
+  }
+
+  function goSearch(term) {
+    window.location.href = `/listings?search=${encodeURIComponent(term)}`;
+  }
+
+  // ── Search bar mic — voice-to-search only ────────────────────────────────
+  const voiceSearchBtn = document.getElementById("voiceSearchBtn");
+  let vsRec = null, vsOn = false;
+  if (('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) && voiceSearchBtn) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    vsRec = new SR();
+    vsRec.continuous = false; vsRec.interimResults = false; vsRec.lang = 'en-US';
+    vsRec.onstart = () => { vsOn = true; voiceSearchBtn.classList.add('listening'); voiceSearchBtn.innerHTML = '<i class="fa-solid fa-stop"></i>'; };
+    vsRec.onend   = () => { vsOn = false; voiceSearchBtn.classList.remove('listening'); voiceSearchBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>'; };
+    vsRec.onerror = () => { vsOn = false; voiceSearchBtn.classList.remove('listening'); voiceSearchBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>'; };
+    vsRec.onresult = e => {
+      const transcript = e.results[0][0].transcript.trim();
+      // Strip common search prefixes, then redirect to listings search
+      const term = transcript.replace(/^(search for|find|show me|books about|search)\s+/i, '').trim();
+      if (searchInput) searchInput.value = term;
+      goSearch(term);
+    };
+    voiceSearchBtn.addEventListener('click', () => vsOn ? vsRec.stop() : vsRec.start());
+  } else if (voiceSearchBtn) {
+    voiceSearchBtn.style.display = 'none';
+  }
+</script>

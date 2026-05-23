@@ -1,0 +1,189 @@
+COLLEGE LIBRARY SYSTEM - IMPLEMENTED FEATURES
+==============================================
+
+AUTHENTICATION & ROLES
+-----------------------
+- Signup / Login / Logout with session management
+- 3 roles: user, librarian, admin
+- Student signup requires admin approval before login
+- Admin-created accounts are instantly active
+- Role-based redirects: admin/librarian → /admin/dashboard, user → /
+- Librarian and admin see left sidebar on all pages
+- Regular users see top navbar on all pages
+
+ROLE PERMISSIONS
+----------------
+Admin (full access):
+  - Everything librarian can do
+  - Delete books, blogs, ebooks, research papers
+  - Delete users, change user roles, add new users
+  - View reports page
+
+Librarian:
+  - Add and edit books (no delete)
+  - Approve/reject borrow requests
+  - Force-return books
+  - Upload ebooks (no delete)
+  - Create/edit blogs (no delete)
+  - Approve/reject research papers (no delete)
+  - Approve/reject pending user accounts
+  - Activate/deactivate regular user accounts only (not admin/librarian)
+  - QR scanner and generator
+  - View admin dashboard
+
+User (student):
+  - Browse books, ebooks, blogs, research
+  - Request to borrow a book (pending librarian approval)
+  - View pending requests and active borrows
+  - Return and renew borrowed books
+  - Reserve books when out of stock
+  - Write and publish blogs
+  - Upload research papers (pending admin approval)
+  - Write reviews on books
+  - View notifications
+  - Edit profile
+
+BOOK MANAGEMENT
+---------------
+- Book catalog with search and filters
+- Book detail page with availability badge
+- Add/edit/delete books (admin/librarian)
+- Book quantity tracking (total vs available)
+- Borrow count tracking per book
+- Book categories
+
+BORROW SYSTEM
+-------------
+- Student submits borrow REQUEST (not instant borrow)
+- Librarian/admin approves or rejects from admin panel
+- On approval: quantity decreases, user notified
+- On rejection: user notified
+- Active borrows shown in "My Books" page
+- Pending requests shown separately with yellow badge
+- Return book functionality
+- Renew book (max 2 renewals)
+- Overdue detection with fine calculation
+- Fine payment
+- Borrow history with pagination
+- Max books per user limit (configurable via .env)
+- Max borrow days configurable via .env
+
+RESERVATION SYSTEM
+------------------
+- Reserve a book when out of stock
+- Notified when reserved book becomes available
+- 48-hour expiry on ready reservations
+- Cancel reservation
+- My Reservations page
+
+QR CODE SYSTEM
+--------------
+- Generate QR code for any book
+- Generate QR card for any user
+- QR scanner page (librarian/admin only)
+- Scan to borrow: scan book QR + select user
+- Scan to return: scan book QR
+
+EBOOKS
+------
+- Upload PDF ebooks with cover image (librarian/admin)
+- Browse and view ebook details
+- Download ebooks
+- View/download count tracking
+
+BLOGS
+-----
+- Create, edit, delete blog posts
+- Rich text content with sanitization
+- Like/unlike blogs
+- Comments on blogs
+- Blog categories and tags
+- View count tracking
+- Admin can manage all blogs
+
+RESEARCH PAPERS
+---------------
+- Upload research papers (PDF)
+- Pending approval workflow
+- Admin/librarian approves or rejects
+- Download papers
+- Review and rating system
+- Category and tag filtering
+
+NOTIFICATIONS
+-------------
+- In-app notifications for borrow approval/rejection
+- Reservation ready notification
+- Unread count badge in navbar
+- Mark all as read
+- Notification history
+
+EMAIL SERVICE
+-------------
+- Welcome email on account creation
+- Reservation ready email notification
+- Gmail SMTP via nodemailer
+
+RECOMMENDATIONS
+---------------
+- Personalized book recommendations based on borrow history
+- Category-based suggestions
+
+CHATBOT
+-------
+- AI-style chatbot for library queries via /api/chat
+
+ADMIN DASHBOARD
+---------------
+- Total books, users, active borrows stats
+- Popular books chart
+- Books by category chart (fixed layout)
+- Recent users list
+- Overdue books list
+- Pending borrow requests badge
+- Reports page (admin only)
+
+ADMIN PANELS
+------------
+- User management (list, add, approve, deactivate, role change, delete)
+- Pending user approvals
+- Book management (add, edit, delete)
+- Borrow management with Pending/Borrowed/Overdue/Returned tabs
+- Ebook management
+- Blog management
+- Research paper management
+- QR generator
+
+PROFILE
+-------
+- View profile with stats (borrowed, active, alerts)
+- Edit profile (name, department, student ID, phone, profile image)
+- Active borrows shown on profile
+- Borrow history preview
+- Active reservations shown
+
+SECURITY
+--------
+- Passport.js authentication with custom strategy (reads raw hash/salt)
+- Never uses user.save() on User model (uses collection.updateOne to preserve hash/salt)
+- Helmet.js security headers
+- Rate limiting on /api routes
+- Session stored in MongoDB
+- Input sanitization on blog content (sanitize-html)
+- Role guards on all sensitive routes (server-side)
+
+TECH STACK
+----------
+- Node.js + Express
+- MongoDB + Mongoose
+- EJS templates with ejs-mate layouts
+- Passport.js (passport-local-mongoose)
+- Bootstrap 5 + custom CSS (glass-card design)
+- Cloudinary for image/file uploads
+- Multer for file handling
+- Nodemailer for emails
+- connect-flash for flash messages
+- express-session + connect-mongo
+- Chart.js for dashboard charts
+- html5-qrcode for QR scanning
+- Font Awesome icons

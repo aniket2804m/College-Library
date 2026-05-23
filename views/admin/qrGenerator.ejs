@@ -1,0 +1,175 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-qrcode me-2"></i>QR Code Generator</h2>
+    <p style="color:#888;font-size:0.9rem;">Generate QR codes for books to use with the scanner</p>
+  </div>
+  <a href="/qr/scanner" class="btn btn-grad"><i class="fa-solid fa-camera me-2"></i>Open Scanner</a>
+</div>
+
+<div class="row g-4">
+  <!-- Generator Panel -->
+  <div class="col-lg-5">
+    <div class="glass-card p-4 anim-up">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-book me-2"></i>Select Book</h5>
+
+      <div class="mb-3">
+        <input type="text" id="bookSearch" class="form-control" placeholder="Search books..."
+          style="border-radius:50px;" oninput="filterBooks(this.value)" />
+      </div>
+
+      <div id="bookList" style="max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+        <% books.forEach(book => { %>
+        <div class="book-item" data-title="<%= book.title.toLowerCase() %>"
+          onclick="selectBook('<%= book._id %>', '<%= book.title.replace(/'/g, "\\'") %>', '<%= (book.author || '').replace(/'/g, "\\'") %>')"
+          style="padding:0.7rem 1rem;border-radius:10px;cursor:pointer;border:2px solid transparent;
+                 background:rgba(102,126,234,0.04);transition:all 0.2s;"
+          onmouseover="this.style.background='rgba(102,126,234,0.1)'"
+          onmouseout="if(!this.classList.contains('selected'))this.style.background='rgba(102,126,234,0.04)'">
+          <div style="font-weight:600;font-size:0.88rem;color:#1a1a2e;"><%= book.title %></div>
+          <div style="font-size:0.78rem;color:#888;"><%= book.author || 'Unknown author' %></div>
+        </div>
+        <% }) %>
+        <% if (books.length === 0) { %>
+        <p style="color:#aaa;text-align:center;padding:2rem 0;">No books found. Add books first.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Display Panel -->
+  <div class="col-lg-7">
+    <div class="glass-card p-4 anim-up" style="animation-delay:0.1s;">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-qrcode me-2"></i>Generated QR Code</h5>
+
+      <div id="qrPlaceholder" style="text-align:center;padding:3rem 1rem;color:#aaa;">
+        <i class="fa-solid fa-hand-pointer" style="font-size:2.5rem;display:block;margin-bottom:1rem;opacity:0.4;"></i>
+        <p style="font-size:0.9rem;">Select a book from the list to generate its QR code</p>
+      </div>
+
+      <div id="qrResult" style="display:none;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div id="qrBookInfo" style="margin-bottom:1rem;"></div>
+          <div style="display:inline-block;padding:1rem;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+            <canvas id="qrCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+          <button onclick="downloadQR()" class="btn btn-grad px-4">
+            <i class="fa-solid fa-download me-2"></i>Download PNG
+          </button>
+          <button onclick="printQR()" class="btn btn-outline-secondary px-4" style="border-radius:50px;">
+            <i class="fa-solid fa-print me-2"></i>Print
+          </button>
+        </div>
+
+        <div class="mt-4 p-3" style="background:rgba(102,126,234,0.06);border-radius:12px;font-size:0.82rem;color:#666;">
+          <i class="fa-solid fa-circle-info me-2" style="color:#667eea;"></i>
+          Scan this QR code with the <a href="/qr/scanner" style="color:#667eea;font-weight:600;">QR Scanner</a> to issue or return this book.
+        </div>
+      </div>
+
+      <div id="qrLoading" style="display:none;text-align:center;padding:3rem;">
+        <div class="spinner-border" style="color:#667eea;" role="status"></div>
+        <p style="color:#888;margin-top:1rem;font-size:0.9rem;">Generating QR code...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<script>
+  let selectedBookId = null;
+  let selectedBookTitle = '';
+
+  function filterBooks(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.book-item').forEach(item => {
+      item.style.display = item.dataset.title.includes(q) ? '' : 'none';
+    });
+  }
+
+  function selectBook(id, title, author) {
+    // Deselect previous
+    document.querySelectorAll('.book-item').forEach(el => {
+      el.classList.remove('selected');
+      el.style.background = 'rgba(102,126,234,0.04)';
+      el.style.borderColor = 'transparent';
+    });
+
+    // Highlight selected
+    event.currentTarget.classList.add('selected');
+    event.currentTarget.style.background = 'rgba(102,126,234,0.15)';
+    event.currentTarget.style.borderColor = '#667eea';
+
+    selectedBookId = id;
+    selectedBookTitle = title;
+    generateQR(id, title, author);
+  }
+
+  async function generateQR(bookId, title, author) {
+    document.getElementById('qrPlaceholder').style.display = 'none';
+    document.getElementById('qrResult').style.display = 'none';
+    document.getElementById('qrLoading').style.display = 'block';
+
+    try {
+      const res = await fetch(`/qr/book/${bookId}`);
+      const data = await res.json();
+
+      document.getElementById('qrLoading').style.display = 'none';
+
+      if (data.qrCode) {
+        document.getElementById('qrBookInfo').innerHTML = `
+          <div style="font-weight:700;font-size:1.1rem;color:#1a1a2e;">${title}</div>
+          <div style="font-size:0.85rem;color:#888;">${author || 'Unknown author'}</div>
+        `;
+
+        // Draw on canvas
+        const canvas = document.getElementById('qrCanvas');
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+        };
+        img.src = data.qrCode;
+
+        document.getElementById('qrResult').style.display = 'block';
+      }
+    } catch (e) {
+      document.getElementById('qrLoading').style.display = 'none';
+      document.getElementById('qrPlaceholder').style.display = 'block';
+      document.getElementById('qrPlaceholder').innerHTML = `
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem;color:#f5576c;display:block;margin-bottom:0.5rem;"></i>
+        <p style="color:#f5576c;">Failed to generate QR code. Try again.</p>
+      `;
+    }
+  }
+
+  function downloadQR() {
+    const canvas = document.getElementById('qrCanvas');
+    const link = document.createElement('a');
+    link.download = `qr-${selectedBookTitle.replace(/\s+/g, '-').toLowerCase()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  function printQR() {
+    const canvas = document.getElementById('qrCanvas');
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html><head><title>QR - ${selectedBookTitle}</title>
+      <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;gap:1rem;}
+      h2{font-size:1.2rem;color:#1a1a2e;}</style></head>
+      <body>
+        <h2>${selectedBookTitle}</h2>
+        <img src="${canvas.toDataURL()}" style="max-width:300px;" />
+        <p style="color:#888;font-size:0.85rem;">Scan to borrow/return</p>
+        <script>window.onload=()=>window.print()<\/script>
+      </body></html>
+    `);
+    win.document.close();
+  }
+</script>

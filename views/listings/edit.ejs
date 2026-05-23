@@ -1,0 +1,83 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-7">
+    <!-- Header -->
+    <div class="text-center mb-4 anim-down">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--grad-sunset);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff;box-shadow:0 8px 24px rgba(250,112,154,0.4);">
+        <i class="fa-solid fa-pen"></i>
+      </div>
+      <h2 style="font-size:1.6rem;font-weight:800;background:var(--grad-sunset);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Edit Book</h2>
+      <p style="color:#888;font-size:0.9rem;">Update the details for "<%= listing.title %>"</p>
+    </div>
+
+    <div class="form-wrapper anim-up">
+      <form action="/listings/<%= listing._id %>?_method=PUT" method="POST" enctype="multipart/form-data" novalidate>
+
+        <div class="mb-3">
+          <label class="form-label">Book Title <span style="color:#f5576c;">*</span></label>
+          <input type="text" name="listing[title]" class="form-control" value="<%= listing.title %>" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Author</label>
+          <input type="text" name="listing[author]" class="form-control" value="<%= listing.author || listing.country || '' %>" />
+          <input type="hidden" name="listing[country]" value="<%= listing.author || listing.country || '' %>" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="listing[category]" class="form-select">
+            <% ['Fiction','Non-Fiction','Science','Technology','History','Biography','Self-Help','Business','Education','Programming','Mathematics','Physics','Chemistry','Literature','Philosophy','Psychology','Other'].forEach(cat => { %>
+            <option value="<%= cat %>" <%= listing.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="listing[description]" class="form-control" rows="4"><%= listing.description %></textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-sm-4">
+            <label class="form-label">Shelf / Location</label>
+            <input type="text" name="listing[location]" class="form-control" value="<%= listing.location || '' %>" />
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Total Quantity</label>
+            <input type="number" name="listing[totalQuantity]" class="form-control" value="<%= listing.totalQuantity || listing.price || 1 %>" min="1" />
+            <input type="hidden" name="listing[price]" value="<%= listing.totalQuantity || listing.price || 1 %>" />
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Available Qty</label>
+            <input type="number" name="listing[availableQuantity]" class="form-control" value="<%= listing.availableQuantity || 0 %>" min="0" />
+          </div>
+        </div>
+
+        <% if (listing.image && listing.image.url) { %>
+        <div class="mb-3">
+          <label class="form-label">Current Cover</label>
+          <div style="border-radius:12px;overflow:hidden;max-height:180px;">
+            <img src="<%= listing.image.url %>" alt="current cover" style="width:100%;height:180px;object-fit:cover;" />
+          </div>
+        </div>
+        <% } %>
+
+        <div class="mb-4">
+          <label class="form-label">Replace Cover Image</label>
+          <input type="file" name="image" class="form-control" accept="image/*" />
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-grad flex-fill" style="padding:0.8rem;">
+            <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+          </button>
+          <a href="/listings/<%= listing._id %>" class="btn btn-outline-secondary flex-fill" style="border-radius:50px;padding:0.8rem;">
+            <i class="fa-solid fa-xmark me-2"></i>Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

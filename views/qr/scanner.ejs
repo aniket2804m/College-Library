@@ -1,0 +1,325 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-camera me-2"></i>QR Code Scanner</h2>
+    <p style="color:#888;font-size:0.9rem;">Scan book QR codes to issue or return books</p>
+  </div>
+  <a href="/admin/qr" class="btn btn-grad"><i class="fa-solid fa-qrcode me-2"></i>Generate QR</a>
+</div>
+
+<div class="row g-4">
+  <!-- Camera Panel -->
+  <div class="col-lg-7">
+    <div class="glass-card p-4 anim-up">
+
+      <!-- Camera selector -->
+      <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <label class="fw-semibold" style="font-size:0.85rem;white-space:nowrap;">
+          <i class="fa-solid fa-video me-1" style="color:#667eea;"></i>Camera:
+        </label>
+        <select id="cameraSelect" class="form-select form-select-sm" style="border-radius:50px;max-width:260px;">
+          <option value="">Detecting cameras...</option>
+        </select>
+        <button id="startBtn" onclick="startScanner()" class="btn btn-grad btn-sm px-3">
+          <i class="fa-solid fa-play me-1"></i>Start
+        </button>
+        <button id="stopBtn" onclick="stopScanner()" class="btn btn-outline-danger btn-sm px-3"
+          style="display:none;border-radius:50px;">
+          <i class="fa-solid fa-stop me-1"></i>Stop
+        </button>
+      </div>
+
+      <!-- Reader container — NO overflow:hidden so html5-qrcode UI renders correctly -->
+      <div id="reader" style="width:100%;border-radius:12px;background:#111;"></div>
+
+      <!-- Debug / status -->
+      <div id="scanStatus" class="mt-2 text-center" style="font-size:0.82rem;color:#888;min-height:24px;">
+        <i class="fa-solid fa-circle-info me-1"></i>Select a camera and press Start
+      </div>
+
+      <!-- Raw decode log (helps debug) -->
+      <div id="debugLog" style="margin-top:8px;font-size:0.72rem;color:#aaa;font-family:monospace;min-height:18px;text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- Action Panel -->
+  <div class="col-lg-5">
+    <div class="glass-card p-4 anim-up" style="animation-delay:0.1s;">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-bolt me-2"></i>Scan Result</h5>
+
+      <div id="noScan" style="text-align:center;padding:2rem 1rem;color:#aaa;">
+        <i class="fa-solid fa-qrcode" style="font-size:2.5rem;display:block;margin-bottom:0.8rem;opacity:0.3;"></i>
+        <p style="font-size:0.88rem;">Waiting for QR scan...</p>
+      </div>
+
+      <div id="bookScanned" style="display:none;margin-bottom:1rem;">
+        <div style="padding:1rem;border-radius:12px;background:rgba(67,233,123,0.1);border:1px solid rgba(67,233,123,0.3);">
+          <div style="font-size:0.72rem;font-weight:700;color:#43e97b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">
+            <i class="fa-solid fa-check-circle me-1"></i>Book Detected
+          </div>
+          <div id="scannedBookTitle" style="font-weight:700;color:#1a1a2e;font-size:0.95rem;"></div>
+          <div id="scannedBookId" style="font-size:0.72rem;color:#888;margin-top:2px;"></div>
+        </div>
+      </div>
+
+      <div id="actionPanel" style="display:none;">
+        <div class="mb-3">
+          <label class="form-label fw-semibold" style="font-size:0.85rem;">Select User</label>
+          <select id="userSelect" class="form-select form-select-sm" style="border-radius:50px;">
+            <option value="">-- Select user --</option>
+          </select>
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <button onclick="processBorrow()" class="btn btn-success flex-fill" style="border-radius:50px;">
+            <i class="fa-solid fa-book me-1"></i>Issue
+          </button>
+          <button onclick="processReturn()" class="btn btn-warning flex-fill" style="border-radius:50px;">
+            <i class="fa-solid fa-rotate-left me-1"></i>Return
+          </button>
+        </div>
+        <button onclick="resetScan()" class="btn btn-outline-secondary w-100" style="border-radius:50px;font-size:0.82rem;">
+          <i class="fa-solid fa-xmark me-1"></i>Scan Again
+        </button>
+      </div>
+
+      <div id="resultMsg" style="margin-top:1rem;"></div>
+    </div>
+
+    <div class="glass-card p-3 mt-3 anim-up" style="animation-delay:0.15s;">
+      <p style="font-size:0.8rem;font-weight:700;color:#667eea;margin-bottom:0.4rem;">
+        <i class="fa-solid fa-circle-info me-1"></i>How to use
+      </p>
+      <ol style="font-size:0.8rem;color:#666;margin:0;padding-left:1.2rem;line-height:1.9;">
+        <li>Select camera (pick external webcam if available)</li>
+        <li>Press <strong>Start</strong></li>
+        <li>Hold book QR code steady in front of camera</li>
+        <li>Select user → Issue or Return</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script src="/js/html5-qrcode.min.js"></script>
+<script>
+  let html5QrCode = null;
+  let scanning = false;
+  let scannedBookData = null;
+  let lastScanTime = 0;
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  window.addEventListener('load', () => {
+    loadCameras();
+    loadUsers();
+  });
+
+  async function loadCameras() {
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      const sel = document.getElementById('cameraSelect');
+      if (!devices || devices.length === 0) {
+        sel.innerHTML = '<option value="">No cameras found — check browser permissions</option>';
+        return;
+      }
+      sel.innerHTML = '';
+      devices.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.label || ('Camera ' + (i + 1));
+        sel.appendChild(opt);
+      });
+      // Prefer last device (usually external USB webcam)
+      sel.selectedIndex = devices.length - 1;
+      setStatus('Camera ready — press Start to begin scanning');
+    } catch (err) {
+      setStatus('Camera permission denied. Allow camera access and reload.', true);
+    }
+  }
+
+  async function loadUsers() {
+    try {
+      const res = await fetch('/qr/users');
+      if (!res.ok) return;
+      const users = await res.json();
+      const sel = document.getElementById('userSelect');
+      sel.innerHTML = '<option value="">-- Select user --</option>';
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify({ type: 'user', id: u._id, username: u.username });
+        opt.textContent = u.username + (u.email ? ' (' + u.email + ')' : '');
+        sel.appendChild(opt);
+      });
+    } catch (e) { /* silent */ }
+  }
+
+  // ── Scanner ───────────────────────────────────────────────────────────────
+  async function startScanner() {
+    const cameraId = document.getElementById('cameraSelect').value;
+    if (!cameraId) { setStatus('Please select a camera first.', true); return; }
+
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = '';
+
+    // Always create a fresh instance
+    if (html5QrCode) {
+      try { await html5QrCode.stop(); } catch(e) {}
+      html5QrCode.clear();
+    }
+    html5QrCode = new Html5Qrcode('reader', { verbose: false });
+
+    const config = {
+      fps: 10,
+      qrbox: function(w, h) {
+        // Use 70% of the smaller dimension
+        const size = Math.floor(Math.min(w, h) * 0.7);
+        return { width: size, height: size };
+      },
+      rememberLastUsedCamera: false,
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    };
+
+    try {
+      await html5QrCode.start(cameraId, config, onScanSuccess, onScanError);
+      scanning = true;
+      setStatus('🟢 Scanning — hold QR code steady in front of camera');
+    } catch (err) {
+      setStatus('Failed to start: ' + err, true);
+      document.getElementById('startBtn').style.display = '';
+      document.getElementById('stopBtn').style.display = 'none';
+    }
+  }
+
+  async function stopScanner() {
+    if (html5QrCode && scanning) {
+      try { await html5QrCode.stop(); } catch(e) {}
+      html5QrCode.clear();
+      scanning = false;
+    }
+    document.getElementById('startBtn').style.display = '';
+    document.getElementById('stopBtn').style.display = 'none';
+    setStatus('Camera stopped');
+  }
+
+  function onScanSuccess(decodedText, decodedResult) {
+    // Debounce — ignore repeated scans within 2 seconds
+    const now = Date.now();
+    if (now - lastScanTime < 2000) return;
+    lastScanTime = now;
+
+    // Show raw decode in debug log
+    document.getElementById('debugLog').textContent = 'Decoded: ' + decodedText.substring(0, 80);
+
+    // Try to parse as library book QR
+    let data = null;
+    try { data = JSON.parse(decodedText); } catch(e) {}
+
+    if (data && data.type === 'book' && data.id) {
+      // Valid book QR
+      scannedBookData = decodedText;
+      showBookScanned(data);
+      beep();
+    } else {
+      // Any QR scanned — show it so user knows scanner IS working
+      setStatus('⚠️ QR scanned but not a library book QR. Raw: ' + decodedText.substring(0, 40));
+    }
+  }
+
+  function onScanError(errorMsg) {
+    // Suppress noisy "No QR code found" messages — only show real errors
+    if (errorMsg && !errorMsg.includes('No MultiFormat Readers') && !errorMsg.includes('No barcode')) {
+      document.getElementById('debugLog').textContent = errorMsg.substring(0, 60);
+    }
+  }
+
+  function showBookScanned(data) {
+    document.getElementById('noScan').style.display = 'none';
+    document.getElementById('bookScanned').style.display = 'block';
+    document.getElementById('actionPanel').style.display = 'block';
+    document.getElementById('scannedBookTitle').textContent = data.title || 'Book';
+    document.getElementById('scannedBookId').textContent = 'ID: ' + data.id;
+    setStatus('✅ Book QR detected — select user and action below');
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  async function processBorrow() {
+    const userVal = document.getElementById('userSelect').value;
+    if (!userVal) { showResult('Select a user first.', false); return; }
+    const res = await fetch('/qr/scan/borrow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookData: scannedBookData, userData: userVal })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showResult('✅ ' + result.message + '<br><small>Due: ' + result.dueDate + '</small>', true);
+      resetScan();
+    } else {
+      showResult('❌ ' + result.error, false);
+    }
+  }
+
+  async function processReturn() {
+    const userVal = document.getElementById('userSelect').value;
+    if (!userVal) { showResult('Select a user first.', false); return; }
+    const res = await fetch('/qr/scan/return', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookData: scannedBookData, userData: userVal })
+    });
+    const result = await res.json();
+    if (result.success) {
+      let msg = '✅ ' + result.message;
+      if (result.fine > 0) msg += '<br><small>Fine: ₹' + result.fine.toFixed(2) + '</small>';
+      showResult(msg, true);
+      resetScan();
+    } else {
+      showResult('❌ ' + result.error, false);
+    }
+  }
+
+  function resetScan() {
+    scannedBookData = null;
+    lastScanTime = 0;
+    document.getElementById('noScan').style.display = 'block';
+    document.getElementById('bookScanned').style.display = 'none';
+    document.getElementById('actionPanel').style.display = 'none';
+    document.getElementById('userSelect').value = '';
+    document.getElementById('debugLog').textContent = '';
+    if (scanning) setStatus('🟢 Scanning — hold QR code steady in front of camera');
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function setStatus(msg, isError) {
+    const el = document.getElementById('scanStatus');
+    el.innerHTML = msg;
+    el.style.color = isError ? '#f5576c' : '#666';
+  }
+
+  function showResult(msg, success) {
+    const el = document.getElementById('resultMsg');
+    const bg = success ? 'rgba(67,233,123,0.12)' : 'rgba(245,87,108,0.12)';
+    const border = success ? 'rgba(67,233,123,0.35)' : 'rgba(245,87,108,0.35)';
+    el.innerHTML = `<div style="padding:0.85rem 1rem;border-radius:12px;background:${bg};border:1px solid ${border};font-size:0.88rem;color:#1a1a2e;">${msg}</div>`;
+    if (success) setTimeout(() => { el.innerHTML = ''; }, 7000);
+  }
+
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 1000; g.gain.value = 0.08;
+      o.start(); o.stop(ctx.currentTime + 0.1);
+    } catch(e) {}
+  }
+</script>
+
+<style>
+  /* Let html5-qrcode render its full UI without clipping */
+  #reader { min-height: 300px; }
+  #reader video { width: 100% !important; border-radius: 10px; }
+  #reader canvas { border-radius: 10px; }
+  /* Hide the default html5-qrcode header text */
+  #reader__header_message { display: none !important; }
+  #reader__status_span { display: none !important; }
+</style>

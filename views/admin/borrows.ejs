@@ -1,0 +1,223 @@
+<% layout("/layouts/admin") %>
+
+<div class="py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 anim-down">
+    <h2 class="section-title mb-0"><i class="fa-solid fa-book-open me-2"></i>Borrow Management</h2>
+    <a href="/admin/dashboard" class="btn btn-grad"><i class="fa-solid fa-arrow-left me-2"></i>Dashboard</a>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="mb-4">
+    <div class="btn-group flex-wrap" role="group">
+      <a href="/admin/borrows?status=Pending" class="btn btn-outline-warning <%= filterStatus === 'Pending' ? 'active' : '' %>" style="border-radius:50px 0 0 50px;">
+        <i class="fa-solid fa-clock me-1"></i>Pending Requests
+        <% if (pendingBorrowCount > 0) { %>
+        <span class="badge" style="background:#f5576c;margin-left:4px;font-size:0.7rem;"><%= pendingBorrowCount %></span>
+        <% } %>
+      </a>
+      <a href="/admin/borrows" class="btn btn-outline-primary <%= !filterStatus ? 'active' : '' %>">All</a>
+      <a href="/admin/borrows?status=Borrowed" class="btn btn-outline-primary <%= filterStatus === 'Borrowed' ? 'active' : '' %>">Borrowed</a>
+      <a href="/admin/borrows?status=Overdue" class="btn btn-outline-danger <%= filterStatus === 'Overdue' ? 'active' : '' %>">Overdue</a>
+      <a href="/admin/borrows?status=Returned" class="btn btn-outline-success <%= filterStatus === 'Returned' ? 'active' : '' %>" style="border-radius:0 50px 50px 0;">Returned</a>
+    </div>
+  </div>
+
+  <div class="glass-card p-4 anim-up">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>Student</th>
+            <th>Requested</th>
+            <th>Due Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+            <th>Fine</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (borrows.length === 0) { %>
+          <tr><td colspan="8" class="text-center py-4" style="color:#aaa;">No records found.</td></tr>
+          <% } %>
+          <% borrows.forEach(borrow => { %>
+          <tr>
+            <td><strong><%= borrow.book ? borrow.book.title : 'N/A' %></strong></td>
+            <td><%= borrow.borrower ? borrow.borrower.username : 'N/A' %></td>
+            <td style="font-size:0.82rem;color:#888;"><%= borrow.issueDate ? new Date(borrow.issueDate).toLocaleDateString() : new Date(borrow.createdAt).toLocaleDateString() %></td>
+            <td style="font-size:0.82rem;"><%= borrow.dueDate ? new Date(borrow.dueDate).toLocaleDateString() : '-' %></td>
+            <td style="font-size:0.82rem;color:#888;"><%= borrow.returnDate ? new Date(borrow.returnDate).toLocaleDateString() : '-' %></td>
+            <td>
+              <% if (borrow.status === 'Pending') { %>
+              <span class="badge" style="background:var(--grad-sunset);font-size:0.75rem;"><i class="fa-solid fa-clock me-1"></i>Pending</span>
+              <% } else if (borrow.status === 'Borrowed') { %>
+              <span class="badge" style="background:var(--grad-ocean);font-size:0.75rem;">Borrowed</span>
+              <% } else if (borrow.status === 'Overdue') { %>
+              <span class="badge" style="background:var(--grad-fire);font-size:0.75rem;">Overdue</span>
+              <% } else if (borrow.status === 'Returned') { %>
+              <span class="badge" style="background:var(--grad-forest);font-size:0.75rem;">Returned</span>
+              <% } else if (borrow.status === 'Rejected') { %>
+              <span class="badge" style="background:#ccc;color:#555;font-size:0.75rem;">Rejected</span>
+              <% } else { %>
+              <span class="badge bg-secondary" style="font-size:0.75rem;"><%= borrow.status %></span>
+              <% } %>
+            </td>
+            <td>₹<%= (borrow.fineAmount || 0).toFixed(2) %></td>
+            <td>
+              <div class="d-flex gap-1 flex-wrap">
+                <% if (borrow.status === 'Pending') { %>
+                <form method="POST" action="/admin/borrows/<%= borrow._id %>/approve">
+                  <button class="btn btn-sm btn-success" style="border-radius:50px;font-size:0.78rem;padding:0.25rem 0.8rem;">
+                    <i class="fa-solid fa-check me-1"></i>Approve
+                  </button>
+                </form>
+                <form method="POST" action="/admin/borrows/<%= borrow._id %>/reject">
+                  <button class="btn btn-sm btn-danger" style="border-radius:50px;font-size:0.78rem;padding:0.25rem 0.8rem;">
+                    <i class="fa-solid fa-xmark me-1"></i>Reject
+                  </button>
+                </form>
+                <% } else if (borrow.status === 'Borrowed' || borrow.status === 'Overdue') { %>
+                <form method="POST" action="/admin/borrows/<%= borrow._id %>/force-return">
+                  <button class="btn btn-sm btn-warning" style="border-radius:50px;font-size:0.78rem;padding:0.25rem 0.8rem;">
+                    <i class="fa-solid fa-rotate-left me-1"></i>Force Return
+                  </button>
+                </form>
+                <!-- Change Due Date -->
+                <button class="btn btn-sm btn-outline-primary" style="border-radius:50px;font-size:0.78rem;padding:0.25rem 0.8rem;"
+                  data-bs-toggle="modal" data-bs-target="#dueDateModal"
+                  data-id="<%= borrow._id %>"
+                  data-title="<%= borrow.book ? borrow.book.title : '' %>"
+                  data-due="<%= borrow.dueDate ? new Date(borrow.dueDate).toISOString().split('T')[0] : '' %>">
+                  <i class="fa-solid fa-calendar-pen me-1"></i>Due Date
+                </button>
+                <!-- Send Reminder -->
+                <button class="btn btn-sm btn-outline-info" style="border-radius:50px;font-size:0.78rem;padding:0.25rem 0.8rem;"
+                  data-bs-toggle="modal" data-bs-target="#reminderModal"
+                  data-id="<%= borrow._id %>"
+                  data-student="<%= borrow.borrower ? borrow.borrower.username : '' %>"
+                  data-title="<%= borrow.book ? borrow.book.title : '' %>">
+                  <i class="fa-solid fa-bell me-1"></i>Remind
+                </button>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+        <a class="page-link" href="?page=<%= i %><%= filterStatus ? '&status=' + filterStatus : '' %>"><%= i %></a>
+      </li>
+      <% } %>
+    </ul>
+  </nav>
+  <% } %>
+</div>
+
+<!-- Change Due Date Modal -->
+<div class="modal fade" id="dueDateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#4facfe,#00f2fe);border-radius:16px 16px 0 0;">
+        <h5 class="modal-title text-white"><i class="fa-solid fa-calendar-pen me-2"></i>Change Due Date</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="dueDateForm" method="POST" action="">
+        <div class="modal-body p-4">
+          <p class="mb-3" style="color:#555;">Book: <strong id="ddBookTitle"></strong></p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Change Type</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="dueDateType" id="typeDate" value="date" checked>
+                <label class="form-check-label" for="typeDate">Specific Date</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="dueDateType" id="typeHours" value="hours">
+                <label class="form-check-label" for="typeHours">Extend by Hours</label>
+              </div>
+            </div>
+          </div>
+          <div id="dateInput" class="mb-3">
+            <label class="form-label fw-semibold">New Due Date</label>
+            <input type="date" name="dueDateValue" id="dueDateValue" class="form-control" style="border-radius:10px;">
+          </div>
+          <div id="hoursInput" class="mb-3" style="display:none;">
+            <label class="form-label fw-semibold">Extend by (hours)</label>
+            <input type="number" name="dueDateValue" id="hoursValue" class="form-control" min="1" max="8760" placeholder="e.g. 48" style="border-radius:10px;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:50px;">Cancel</button>
+          <button type="submit" class="btn btn-grad" style="border-radius:50px;"><i class="fa-solid fa-check me-2"></i>Update Due Date</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Send Reminder Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#fa709a,#fee140);border-radius:16px 16px 0 0;">
+        <h5 class="modal-title text-white"><i class="fa-solid fa-bell me-2"></i>Send Reminder</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="reminderForm" method="POST" action="">
+        <div class="modal-body p-4">
+          <p class="mb-3" style="color:#555;">
+            Send reminder to: <strong id="rmStudent"></strong><br>
+            Book: <strong id="rmBook"></strong>
+          </p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Custom Message (optional)</label>
+            <textarea name="message" class="form-control" rows="3" style="border-radius:10px;"
+              placeholder="Leave blank for default reminder message..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:50px;">Cancel</button>
+          <button type="submit" class="btn btn-grad" style="border-radius:50px;background:linear-gradient(135deg,#fa709a,#fee140);"><i class="fa-solid fa-paper-plane me-2"></i>Send Reminder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Due Date Modal
+const dueDateModal = document.getElementById('dueDateModal');
+dueDateModal.addEventListener('show.bs.modal', e => {
+  const btn = e.relatedTarget;
+  document.getElementById('ddBookTitle').textContent = btn.dataset.title;
+  document.getElementById('dueDateValue').value = btn.dataset.due || '';
+  document.getElementById('dueDateForm').action = `/admin/borrows/${btn.dataset.id}/change-due-date`;
+});
+document.querySelectorAll('input[name="dueDateType"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const isHours = document.getElementById('typeHours').checked;
+    document.getElementById('dateInput').style.display = isHours ? 'none' : '';
+    document.getElementById('hoursInput').style.display = isHours ? '' : 'none';
+    document.getElementById('dueDateValue').disabled = isHours;
+    document.getElementById('hoursValue').disabled = !isHours;
+  });
+});
+
+// Reminder Modal
+const reminderModal = document.getElementById('reminderModal');
+reminderModal.addEventListener('show.bs.modal', e => {
+  const btn = e.relatedTarget;
+  document.getElementById('rmStudent').textContent = btn.dataset.student;
+  document.getElementById('rmBook').textContent = btn.dataset.title;
+  document.getElementById('reminderForm').action = `/admin/borrows/${btn.dataset.id}/send-reminder`;
+});
+</script>

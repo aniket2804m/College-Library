@@ -1,0 +1,67 @@
+<% layout("/layouts/admin") %>
+
+<div class="py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 anim-down">
+    <h2 class="section-title mb-0"><i class="fa-solid fa-book me-2"></i>Book Management</h2>
+    <div class="d-flex gap-2">
+      <a href="/admin/books/new" class="btn btn-grad"><i class="fa-solid fa-plus me-2"></i>Add Book</a>
+      <a href="/admin/dashboard" class="btn btn-outline-secondary" style="border-radius:50px;"><i class="fa-solid fa-arrow-left me-2"></i>Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <form method="GET" action="/admin/books" class="glass-card p-3 mb-4 anim-down">
+    <div class="d-flex gap-2">
+      <input type="text" name="search" value="<%= search %>" class="form-control" style="border-radius:50px;" placeholder="Search by title..." />
+      <button class="btn btn-grad px-4" style="white-space:nowrap;"><i class="fa-solid fa-search me-1"></i>Search</button>
+    </div>
+  </form>
+
+  <div class="glass-card p-4 anim-up">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">
+          <tr><th>Cover</th><th>Title</th><th>Author</th><th>Qty</th><th>Available</th><th>Borrows</th><th>Added By</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <% books.forEach(book => { %>
+          <tr>
+            <td><img src="<%= book.image && book.image.url ? book.image.url : '' %>" style="width:40px;height:50px;object-fit:cover;border-radius:6px;" /></td>
+            <td style="font-weight:600;font-size:0.88rem;"><%= book.title %></td>
+            <td style="font-size:0.85rem;color:#666;"><%= book.author || book.country || '-' %></td>
+            <td><%= book.totalQuantity || book.price || 0 %></td>
+            <td>
+              <span class="badge bg-<%= book.availableQuantity > 0 ? 'success' : 'danger' %>"><%= book.availableQuantity || 0 %></span>
+            </td>
+            <td><%= book.borrowCount || 0 %></td>
+            <td style="font-size:0.82rem;color:#888;"><%= book.owner ? book.owner.username : '-' %></td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="/listings/<%= book._id %>" class="btn btn-sm btn-outline-primary" style="border-radius:50px;font-size:0.75rem;">View</a>
+                <a href="/admin/books/<%= book._id %>/edit" class="btn btn-sm btn-outline-warning" style="border-radius:50px;font-size:0.75rem;">Edit</a>
+                <% if (isAdmin) { %>
+                <form method="POST" action="/admin/books/<%= book._id %>/delete" onsubmit="return confirm('Delete this book?')">
+                  <button class="btn btn-sm btn-outline-danger" style="border-radius:50px;font-size:0.75rem;">Delete</button>
+                </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+        <a class="page-link" href="?page=<%= i %>&search=<%= search %>"><%= i %></a>
+      </li>
+      <% } %>
+    </ul>
+  </nav>
+  <% } %>
+</div>

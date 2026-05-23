@@ -1,0 +1,40 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-6">
+    <div class="text-center mb-4 anim-down">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--grad-ocean);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff;box-shadow:0 8px 24px rgba(79,172,254,0.4);">
+        <i class="fa-solid fa-user-pen"></i>
+      </div>
+      <h2 style="font-size:1.6rem;font-weight:800;background:var(--grad-ocean);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Edit Profile</h2>
+    </div>
+    <div class="form-wrapper anim-up">
+      <form action="/profile?_method=PUT" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="fullName" class="form-control" value="<%= profileUser.fullName || '' %>" placeholder="Your full name" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input type="text" name="phone" class="form-control" value="<%= profileUser.phone || '' %>" placeholder="+91 XXXXX XXXXX" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Department</label>
+          <input type="text" name="department" class="form-control" value="<%= profileUser.department || '' %>" placeholder="e.g. Computer Science" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Student ID</label>
+          <input type="text" name="studentId" class="form-control" value="<%= profileUser.studentId || '' %>" placeholder="e.g. CS2024001" />
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Profile Photo</label>
+          <input type="file" name="profileImage" class="form-control" accept="image/*" />
+        </div>
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-grad flex-fill" style="padding:0.8rem;"><i class="fa-solid fa-floppy-disk me-2"></i>Save</button>
+          <a href="/profile" class="btn btn-outline-secondary flex-fill" style="border-radius:50px;padding:0.8rem;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

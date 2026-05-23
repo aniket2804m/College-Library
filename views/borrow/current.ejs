@@ -1,0 +1,93 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="anim-down mb-4">
+  <h2 class="section-title"><i class="fa-solid fa-bookmark me-2"></i>My Borrowed Books</h2>
+  <p style="color:#888;font-size:0.9rem;">Books you currently have checked out</p>
+</div>
+
+<!-- Pending Requests Section -->
+<% if (pendingRequests && pendingRequests.length > 0) { %>
+<div class="glass-card p-4 mb-4 anim-up" style="border-left:4px solid #feca57;">
+  <h5 style="font-weight:700;color:#1a1a2e;margin-bottom:1rem;">
+    <i class="fa-solid fa-clock me-2" style="color:#feca57;"></i>Pending Requests (<%= pendingRequests.length %>)
+  </h5>
+  <p style="color:#888;font-size:0.85rem;margin-bottom:1rem;">Awaiting librarian approval</p>
+  <div class="row g-3">
+    <% for (let preq of pendingRequests) { %>
+    <div class="col-md-6 col-lg-4">
+      <div style="background:rgba(254,202,87,0.08);border:1px solid rgba(254,202,87,0.3);border-radius:14px;padding:1rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">
+          <% if (preq.book && preq.book.image && preq.book.image.url) { %>
+          <img src="<%= preq.book.image.url %>" style="width:40px;height:50px;object-fit:cover;border-radius:6px;" />
+          <% } else { %>
+          <div style="width:40px;height:50px;border-radius:6px;background:var(--grad-sunset);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;">📚</div>
+          <% } %>
+          <div>
+            <div style="font-weight:700;color:#1a1a2e;font-size:0.88rem;"><%= preq.book ? preq.book.title : 'N/A' %></div>
+            <div style="font-size:0.75rem;color:#aaa;">Requested: <%= new Date(preq.createdAt).toLocaleDateString() %></div>
+          </div>
+        </div>
+        <span class="badge" style="background:var(--grad-sunset);font-size:0.72rem;"><i class="fa-solid fa-clock me-1"></i>Awaiting Approval</span>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<% if (!borrows || borrows.length === 0) { %>
+<div class="glass-card p-5 text-center anim-up">
+  <div style="font-size:3rem;margin-bottom:1rem;">📚</div>
+  <h5 style="color:#555;font-weight:600;">No active borrows</h5>
+  <p style="color:#aaa;font-size:0.9rem;">You haven't borrowed any books yet.</p>
+  <a href="/listings" class="btn btn-grad mt-2"><i class="fa-solid fa-book me-2"></i>Browse Books</a>
+</div>
+<% } else { %>
+<div class="row g-4 anim-up">
+  <% for (let borrow of borrows) { %>
+  <div class="col-md-6 col-lg-4">
+    <div class="glass-card overflow-hidden h-100" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+      <% if (borrow.book && borrow.book.image) { %>
+      <img src="<%= borrow.book.image.url %>" alt="book" style="width:100%;height:160px;object-fit:cover;" />
+      <% } %>
+      <div class="p-3">
+        <h6 style="font-weight:700;color:#1a1a2e;margin-bottom:0.8rem;"><%= borrow.book ? borrow.book.title : 'Unknown Book' %></h6>
+        <div style="font-size:0.82rem;color:#666;display:flex;flex-direction:column;gap:0.4rem;">
+          <span><i class="fa-solid fa-calendar-plus me-2" style="color:#667eea;"></i>Issued: <%= borrow.issueDate ? new Date(borrow.issueDate).toLocaleDateString() : '-' %></span>
+          <span><i class="fa-solid fa-calendar-xmark me-2" style="color:#f5576c;"></i>Due: <%= borrow.dueDate ? new Date(borrow.dueDate).toLocaleDateString() : '-' %></span>
+          <% if (borrow.fineAmount > 0) { %>
+          <span style="color:#f5576c;font-weight:600;"><i class="fa-solid fa-triangle-exclamation me-2"></i>Fine: ₹<%= borrow.fineAmount %></span>
+          <% } %>
+        </div>
+        <div class="mt-3">
+          <% const today = new Date(); const due = new Date(borrow.dueDate); %>
+          <% if (due < today) { %>
+          <span class="badge" style="background:var(--grad-fire);">Overdue</span>
+          <% } else { %>
+          <span class="badge" style="background:var(--grad-forest);">Active</span>
+          <% } %>
+        </div>
+        <form method="POST" action="/borrow/<%= borrow._id %>/return" class="mt-3">
+          <button type="submit" class="btn btn-sm w-100" style="border-radius:50px;background:var(--grad-ocean);color:#fff;border:none;font-weight:600;padding:0.5rem;">
+            <i class="fa-solid fa-rotate-left me-2"></i>Return Book
+          </button>
+        </form>
+        <% if (borrow.renewalCount < 2 && new Date(borrow.dueDate) > new Date()) { %>
+        <form method="POST" action="/borrow/<%= borrow._id %>/renew" class="mt-2">
+          <button type="submit" class="btn btn-sm w-100" style="border-radius:50px;background:rgba(67,233,123,0.15);color:#2d8a5e;border:1px solid rgba(67,233,123,0.3);font-weight:600;padding:0.5rem;">
+            <i class="fa-solid fa-arrows-rotate me-2"></i>Renew (<%= 2 - borrow.renewalCount %> left)
+          </button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+<% } %>
+
+<div class="mt-4 anim-up" style="animation-delay:0.2s;">
+  <a href="/borrow/history" style="color:#667eea;text-decoration:none;font-weight:600;font-size:0.9rem;">
+    <i class="fa-solid fa-clock-rotate-left me-1"></i>View Borrow History
+  </a>
+</div>

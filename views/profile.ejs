@@ -1,0 +1,135 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row g-4 py-3">
+  <!-- Left: Profile Card -->
+  <div class="col-lg-4">
+    <div class="glass-card p-4 text-center anim-up">
+      <div style="position:relative;display:inline-block;margin-bottom:1rem;">
+        <% if (profileUser.profileImage && profileUser.profileImage.url) { %>
+        <img src="<%= profileUser.profileImage.url %>" alt="Profile" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid transparent;background:linear-gradient(white,white) padding-box,var(--grad-primary) border-box;" />
+        <% } else { %>
+        <div style="width:100px;height:100px;border-radius:50%;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#fff;margin:0 auto;">
+          <%= profileUser.username.charAt(0).toUpperCase() %>
+        </div>
+        <% } %>
+        <a href="/profile/edit" style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:var(--grad-ocean);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.7rem;text-decoration:none;">
+          <i class="fa-solid fa-pen"></i>
+        </a>
+      </div>
+      <h4 style="font-weight:800;color:#1a1a2e;margin-bottom:0.2rem;"><%= profileUser.username %></h4>
+      <p style="color:#888;font-size:0.85rem;margin-bottom:0.5rem;"><%= profileUser.email %></p>
+      <span class="badge" style="background:var(--grad-primary);font-size:0.78rem;"><%= profileUser.role %></span>
+      <% if (profileUser.department) { %>
+      <p style="color:#666;font-size:0.85rem;margin-top:0.8rem;"><i class="fa-solid fa-building me-1" style="color:#667eea;"></i><%= profileUser.department %></p>
+      <% } %>
+      <% if (profileUser.studentId) { %>
+      <p style="color:#666;font-size:0.85rem;"><i class="fa-solid fa-id-card me-1" style="color:#4facfe;"></i><%= profileUser.studentId %></p>
+      <% } %>
+      <% if (profileUser.phone) { %>
+      <p style="color:#666;font-size:0.85rem;"><i class="fa-solid fa-phone me-1" style="color:#43e97b;"></i><%= profileUser.phone %></p>
+      <% } %>
+      <hr style="border-color:#f0f0f0;margin:1rem 0;">
+      <div class="row g-2 text-center">
+        <div class="col-4">
+          <div style="font-size:1.4rem;font-weight:800;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"><%= profileUser.totalBorrowed || 0 %></div>
+          <div style="font-size:0.72rem;color:#aaa;">Borrowed</div>
+        </div>
+        <div class="col-4">
+          <div style="font-size:1.4rem;font-weight:800;background:var(--grad-sunset);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"><%= activeBorrows.length %></div>
+          <div style="font-size:0.72rem;color:#aaa;">Active</div>
+        </div>
+        <div class="col-4">
+          <div style="font-size:1.4rem;font-weight:800;background:var(--grad-fire);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"><%= unreadNotifs %></div>
+          <div style="font-size:0.72rem;color:#aaa;">Alerts</div>
+        </div>
+      </div>
+      <div class="mt-3 d-flex flex-column gap-2">
+        <a href="/profile/edit" class="btn btn-grad btn-sm"><i class="fa-solid fa-pen me-2"></i>Edit Profile</a>
+        <a href="/notifications" class="btn btn-sm" style="border-radius:50px;background:rgba(102,126,234,0.1);color:#667eea;border:1px solid rgba(102,126,234,0.2);">
+          <i class="fa-solid fa-bell me-2"></i>Notifications
+          <% if (unreadNotifs > 0) { %><span class="badge" style="background:var(--grad-fire);font-size:0.7rem;margin-left:4px;"><%= unreadNotifs %></span><% } %>
+        </a>
+        <a href="/reservations" class="btn btn-sm" style="border-radius:50px;background:rgba(67,233,123,0.1);color:#2d8a5e;border:1px solid rgba(67,233,123,0.2);">
+          <i class="fa-solid fa-bookmark me-2"></i>My Reservations
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Content -->
+  <div class="col-lg-8">
+    <!-- Active Borrows -->
+    <div class="glass-card p-4 mb-4 anim-up" style="animation-delay:0.1s;">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-book-open me-2"></i>Currently Borrowed (<%= activeBorrows.length %>)</h5>
+      <% if (activeBorrows.length === 0) { %>
+      <p style="color:#aaa;font-size:0.9rem;text-align:center;padding:1rem 0;">No active borrows. <a href="/listings" style="color:#667eea;">Browse books →</a></p>
+      <% } else { %>
+      <div class="row g-3">
+        <% for (let b of activeBorrows) { %>
+        <div class="col-sm-6">
+          <div style="background:rgba(102,126,234,0.05);border-radius:12px;padding:0.9rem;border:1px solid rgba(102,126,234,0.1);">
+            <div style="font-weight:700;color:#1a1a2e;font-size:0.9rem;margin-bottom:0.4rem;"><%= b.book ? b.book.title : 'N/A' %></div>
+            <div style="font-size:0.78rem;color:#888;">
+              <i class="fa-solid fa-calendar-xmark me-1" style="color:#f5576c;"></i>Due: <%= b.dueDate ? new Date(b.dueDate).toLocaleDateString() : '-' %>
+            </div>
+            <% if (b.fineAmount > 0) { %>
+            <div style="font-size:0.78rem;color:#f5576c;font-weight:600;margin-top:0.2rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Fine: ₹<%= b.fineAmount %></div>
+            <% } %>
+          </div>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Borrow History -->
+    <div class="glass-card p-4 mb-4 anim-up" style="animation-delay:0.15s;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="section-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>Recent History</h5>
+        <a href="/borrow/history" style="color:#667eea;font-size:0.85rem;text-decoration:none;">View all →</a>
+      </div>
+      <% if (borrowHistory.length === 0) { %>
+      <p style="color:#aaa;font-size:0.9rem;text-align:center;padding:1rem 0;">No borrow history yet.</p>
+      <% } else { %>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;">
+        <% for (let b of borrowHistory.slice(0,5)) { %>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;background:rgba(0,0,0,0.02);border-radius:10px;">
+          <span style="font-size:0.88rem;font-weight:600;color:#1a1a2e;"><%= b.book ? b.book.title : 'N/A' %></span>
+          <% if (b.status === 'Returned') { %>
+          <span class="badge" style="background:var(--grad-forest);font-size:0.72rem;">Returned</span>
+          <% } else if (b.status === 'Overdue') { %>
+          <span class="badge" style="background:var(--grad-fire);font-size:0.72rem;">Overdue</span>
+          <% } else { %>
+          <span class="badge" style="background:var(--grad-sunset);font-size:0.72rem;">Active</span>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Active Reservations -->
+    <% if (reservations.length > 0) { %>
+    <div class="glass-card p-4 anim-up" style="animation-delay:0.2s;">
+      <h5 class="section-title mb-3"><i class="fa-solid fa-bookmark me-2"></i>Active Reservations</h5>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;">
+        <% for (let r of reservations) { %>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem;background:rgba(67,233,123,0.05);border-radius:10px;border:1px solid rgba(67,233,123,0.15);">
+          <span style="font-size:0.88rem;font-weight:600;color:#1a1a2e;"><%= r.book ? r.book.title : 'N/A' %></span>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <% if (r.status === 'Ready') { %>
+            <span class="badge" style="background:var(--grad-forest);">Ready!</span>
+            <% } else { %>
+            <span class="badge" style="background:var(--grad-ocean);">Pending</span>
+            <% } %>
+            <form method="POST" action="/reservations/<%= r._id %>/cancel">
+              <button type="submit" style="background:none;border:none;color:#f5576c;font-size:0.78rem;cursor:pointer;padding:0;">Cancel</button>
+            </form>
+          </div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>

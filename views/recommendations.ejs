@@ -1,0 +1,53 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="anim-down mb-4">
+  <h2 class="section-title"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>AI Book Recommendations</h2>
+  <p style="color:#888;font-size:0.9rem;">Personalized picks based on your reading history and interests</p>
+</div>
+
+<div id="recContainer">
+  <div class="text-center py-5">
+    <div class="loader-ring" style="width:50px;height:50px;border-width:3px;margin:0 auto;"></div>
+    <p style="color:#aaa;margin-top:1rem;font-size:0.9rem;">Finding books for you...</p>
+  </div>
+</div>
+
+<script>
+  fetch('/recommendations/api')
+    .then(r => r.json())
+    .then(data => {
+      const container = document.getElementById('recContainer');
+      if (!data.recommendations || data.recommendations.length === 0) {
+        container.innerHTML = '<div class="glass-card p-5 text-center"><div style="font-size:3rem;margin-bottom:1rem;">📚</div><h5 style="color:#555;">No recommendations yet</h5><p style="color:#aaa;">Borrow some books first and we\'ll personalize your recommendations!</p><a href="/listings" class="btn btn-grad mt-2">Browse Books</a></div>';
+        return;
+      }
+      let html = `<div class="glass-card p-3 mb-4" style="background:linear-gradient(135deg,rgba(102,126,234,0.08),rgba(240,147,251,0.08));border:1px solid rgba(102,126,234,0.15);">
+        <div style="display:flex;align-items:center;gap:0.8rem;">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0;"><i class="fa-solid fa-robot"></i></div>
+          <div><div style="font-weight:700;color:#1a1a2e;font-size:0.95rem;">AI Recommendation Engine</div><div style="color:#888;font-size:0.82rem;">${data.reason}</div></div>
+        </div>
+      </div>
+      <div class="row g-4">`;
+      data.recommendations.forEach(book => {
+        const avail = book.availableQuantity > 0 ? `<span style="color:#43e97b;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-circle-check me-1"></i>Available</span>` : `<span style="color:#f5576c;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-circle-xmark me-1"></i>Out of Stock</span>`;
+        html += `<div class="col-md-6 col-lg-3">
+          <a href="/listings/${book._id}" class="text-decoration-none">
+            <div class="listing-card h-100" style="cursor:pointer;">
+              <img src="${book.image ? book.image.url : '/img/default-book.jpg'}" style="height:180px;width:100%;object-fit:cover;" alt="${book.title}" loading="lazy" />
+              <div class="card-body">
+                <p class="card-text"><b>${book.title}</b>
+                  <span style="color:#888;font-size:0.78rem;display:block;">${book.author || book.country || 'Unknown Author'}</span>
+                  <span style="display:block;margin-top:0.3rem;">${avail}</span>
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('recContainer').innerHTML = '<div class="glass-card p-4 text-center" style="color:#aaa;">Could not load recommendations. <a href="/listings" style="color:#667eea;">Browse all books</a></div>';
+    });
+</script>

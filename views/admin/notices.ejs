@@ -1,0 +1,140 @@
+<% layout("/layouts/admin") %>
+
+<div class="py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 anim-down">
+    <h2 class="section-title mb-0"><i class="fa-solid fa-bullhorn me-2"></i>Notice Board</h2>
+    <button class="btn btn-grad" data-bs-toggle="modal" data-bs-target="#newNoticeModal">
+      <i class="fa-solid fa-plus me-2"></i>New Notice
+    </button>
+  </div>
+
+  <div class="glass-card p-4 anim-up">
+    <% if (notices.length === 0) { %>
+    <p class="text-center py-4" style="color:#aaa;">No notices yet. Create one above.</p>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Audience</th>
+            <th>Email Sent</th>
+            <th>Expires</th>
+            <th>Status</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% notices.forEach(n => { %>
+          <tr>
+            <td>
+              <strong><%= n.title %></strong>
+              <div style="font-size:0.78rem;color:#888;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= n.content %></div>
+            </td>
+            <td>
+              <% const typeColors = { info: '#4facfe', warning: '#feca57', urgent: '#f5576c', event: '#43e97b' }; %>
+              <span class="badge" style="background:<%= typeColors[n.type] || '#667eea' %>;font-size:0.72rem;"><%= n.type %></span>
+            </td>
+            <td style="font-size:0.82rem;"><%= n.audience %></td>
+            <td>
+              <% if (n.sendEmail) { %>
+              <span style="color:<%= n.emailSent ? '#43e97b' : '#feca57' %>;font-size:0.82rem;">
+                <i class="fa-solid fa-<%= n.emailSent ? 'check' : 'clock' %> me-1"></i><%= n.emailSent ? 'Sent' : 'Pending' %>
+              </span>
+              <% } else { %>
+              <span style="color:#aaa;font-size:0.78rem;">—</span>
+              <% } %>
+            </td>
+            <td style="font-size:0.78rem;color:#888;">
+              <%= n.expiresAt ? new Date(n.expiresAt).toLocaleDateString() : '—' %>
+            </td>
+            <td>
+              <span class="badge" style="background:<%= n.active ? 'var(--grad-forest)' : '#ccc' %>;color:<%= n.active ? '#fff' : '#555' %>;font-size:0.72rem;">
+                <%= n.active ? 'Active' : 'Inactive' %>
+              </span>
+            </td>
+            <td style="font-size:0.82rem;"><%= n.createdBy ? n.createdBy.username : '—' %></td>
+            <td>
+              <div class="d-flex gap-1 flex-wrap">
+                <form method="POST" action="/admin/notices/<%= n._id %>/toggle">
+                  <button class="btn btn-sm btn-outline-secondary" style="border-radius:50px;font-size:0.75rem;padding:0.2rem 0.7rem;" title="<%= n.active ? 'Deactivate' : 'Activate' %>">
+                    <i class="fa-solid fa-<%= n.active ? 'eye-slash' : 'eye' %>"></i>
+                  </button>
+                </form>
+                <% if (isAdmin) { %>
+                <form method="POST" action="/admin/notices/<%= n._id %>/delete" onsubmit="return confirm('Delete this notice?')">
+                  <button class="btn btn-sm btn-danger" style="border-radius:50px;font-size:0.75rem;padding:0.2rem 0.7rem;">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- New Notice Modal -->
+<div class="modal fade" id="newNoticeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 16px 0 0;">
+        <h5 class="modal-title text-white"><i class="fa-solid fa-bullhorn me-2"></i>Create New Notice</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="/admin/notices/new">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" required placeholder="Notice title..." style="border-radius:10px;">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Content <span class="text-danger">*</span></label>
+            <textarea name="content" class="form-control" rows="4" required placeholder="Notice content..." style="border-radius:10px;"></textarea>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Type</label>
+              <select name="type" class="form-select" style="border-radius:10px;">
+                <option value="info">ℹ️ Info</option>
+                <option value="warning">⚠️ Warning</option>
+                <option value="urgent">🚨 Urgent</option>
+                <option value="event">🎉 Event</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Audience</label>
+              <select name="audience" class="form-select" style="border-radius:10px;">
+                <option value="all">All Users</option>
+                <option value="students">Students Only</option>
+                <option value="librarians">Staff Only</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Expires At (optional)</label>
+              <input type="date" name="expiresAt" class="form-control" style="border-radius:10px;">
+            </div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="sendEmail" id="sendEmailCheck">
+            <label class="form-check-label fw-semibold" for="sendEmailCheck">
+              <i class="fa-solid fa-envelope me-1" style="color:#667eea;"></i>Send email to audience
+            </label>
+            <div style="font-size:0.78rem;color:#888;margin-top:2px;">Emails will be sent to all active users matching the audience.</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #eee;">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:50px;">Cancel</button>
+          <button type="submit" class="btn btn-grad" style="border-radius:50px;"><i class="fa-solid fa-paper-plane me-2"></i>Publish Notice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

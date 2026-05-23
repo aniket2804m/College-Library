@@ -1,0 +1,44 @@
+<% layout("/layouts/boilerplate") %>
+
+<style>
+  
+  .error-wrapper {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-left: 5px solid #d63031;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+    margin-top: 5rem;
+    color: #2d3436;
+  }
+
+  .error-icon {
+    font-size: 3rem;
+    color: #d63031;
+    margin-right: 1rem;
+  }
+
+  .alert-heading {
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: #d63031;
+  }
+
+  .error-stack {
+    font-size: 0.95rem;
+    color: #636e72;
+    white-space: pre-wrap;
+    margin-top: 1rem;
+  }
+</style>
+
+<div class="row justify-content-center">
+  <div class="col-md-8 error-wrapper d-flex align-items-start">
+    <i class="fa-solid fa-triangle-exclamation error-icon"></i>
+    <div>
+      <p class="alert-heading"><%= err.message %></p>
+     
+    </div>
+  </div>
+</div>
+

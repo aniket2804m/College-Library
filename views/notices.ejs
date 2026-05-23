@@ -1,0 +1,60 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="container py-5">
+  <div class="d-flex align-items-center gap-3 mb-4 anim-down">
+    <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;">
+      <i class="fa-solid fa-bullhorn"></i>
+    </div>
+    <div>
+      <h2 class="mb-0 fw-bold" style="color:#1a1a2e;">Notice Board</h2>
+      <p class="mb-0" style="color:#888;font-size:0.9rem;">Library announcements and updates</p>
+    </div>
+  </div>
+
+  <% if (notices.length === 0) { %>
+  <div class="glass-card p-5 text-center anim-up">
+    <i class="fa-solid fa-bell-slash" style="font-size:3rem;color:#ccc;"></i>
+    <p class="mt-3" style="color:#aaa;">No active notices at the moment.</p>
+  </div>
+  <% } else { %>
+  <div class="row g-4 anim-up">
+    <% const typeConfig = {
+      info:    { icon: 'circle-info',       grad: 'linear-gradient(135deg,#4facfe,#00f2fe)', label: 'Info' },
+      warning: { icon: 'triangle-exclamation', grad: 'linear-gradient(135deg,#feca57,#ff9f43)', label: 'Warning' },
+      urgent:  { icon: 'circle-exclamation', grad: 'linear-gradient(135deg,#f5576c,#f093fb)', label: 'Urgent' },
+      event:   { icon: 'calendar-star',     grad: 'linear-gradient(135deg,#43e97b,#38f9d7)', label: 'Event' }
+    }; %>
+    <% notices.forEach(n => {
+      const cfg = typeConfig[n.type] || typeConfig.info;
+    %>
+    <div class="col-md-6 col-lg-4">
+      <div class="glass-card h-100" style="border-radius:16px;overflow:hidden;">
+        <div style="background:<%= cfg.grad %>;padding:16px 20px;display:flex;align-items:center;gap:12px;">
+          <i class="fa-solid fa-<%= cfg.icon %>" style="font-size:1.3rem;color:#fff;"></i>
+          <div>
+            <span style="font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:1px;"><%= cfg.label %></span>
+            <div style="font-size:1rem;font-weight:700;color:#fff;line-height:1.2;"><%= n.title %></div>
+          </div>
+        </div>
+        <div style="padding:16px 20px;">
+          <p style="color:#555;font-size:0.9rem;line-height:1.7;white-space:pre-line;"><%= n.content %></p>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
+            <span style="font-size:0.75rem;color:#aaa;">
+              <i class="fa-solid fa-user me-1"></i><%= n.createdBy ? n.createdBy.username : 'Library' %>
+            </span>
+            <span style="font-size:0.75rem;color:#aaa;">
+              <i class="fa-solid fa-clock me-1"></i><%= new Date(n.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) %>
+            </span>
+          </div>
+          <% if (n.expiresAt) { %>
+          <div style="font-size:0.72rem;color:#f5576c;margin-top:6px;">
+            <i class="fa-solid fa-hourglass-end me-1"></i>Expires: <%= new Date(n.expiresAt).toLocaleDateString() %>
+          </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+</div>

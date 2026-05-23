@@ -1,0 +1,51 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-pen-nib me-2"></i>New Blog Post</h2>
+    <p style="color:#888;font-size:0.9rem;">Write and publish a new blog post</p>
+  </div>
+  <a href="/admin/blogs" class="btn btn-grad"><i class="fa-solid fa-arrow-left me-2"></i>Back to Blogs</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card p-4 anim-up">
+      <form action="/admin/blogs/new" method="POST" novalidate>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input type="text" name="blog[title]" class="form-control" placeholder="Blog post title" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Category</label>
+            <select name="blog[category]" class="form-select">
+              <option value="Other">General</option>
+              <option value="News">News</option>
+              <option value="Events">Events</option>
+              <option value="Tips">Tips & Tricks</option>
+              <option value="Reviews">Reviews</option>
+              <option value="Technology">Technology</option>
+              <option value="Education">Education</option>
+              <option value="Announcements">Announcements</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Content <span class="text-danger">*</span></label>
+            <textarea name="blog[content]" class="form-control" rows="10" placeholder="Write your blog post here..." required></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Tags <span style="color:#aaa;font-size:0.8rem;">(comma separated)</span></label>
+            <input type="text" name="blog[tags]" class="form-control" placeholder="e.g. books, reading, library" />
+          </div>
+        </div>
+        <div class="mt-4 d-flex gap-3">
+          <button type="submit" class="btn btn-grad px-5" style="padding:0.75rem 2rem;">
+            <i class="fa-solid fa-paper-plane me-2"></i>Publish Post
+          </button>
+          <a href="/admin/blogs" class="btn btn-outline-secondary px-4" style="border-radius:50px;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

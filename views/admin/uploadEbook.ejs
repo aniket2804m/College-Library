@@ -1,0 +1,70 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-upload me-2"></i>Upload E-Book</h2>
+    <p style="color:#888;font-size:0.9rem;">Add a digital book to the library collection</p>
+  </div>
+  <a href="/admin/ebooks" class="btn btn-grad"><i class="fa-solid fa-arrow-left me-2"></i>Back to E-Books</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card p-4 anim-up">
+      <form action="/admin/ebooks/upload" method="POST" enctype="multipart/form-data" novalidate>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="Book title" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Author <span class="text-danger">*</span></label>
+            <input type="text" name="author" class="form-control" placeholder="Author name" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Category</label>
+            <select name="category" class="form-select">
+              <% ['Fiction','Non-Fiction','Science','Technology','History','Biography','Self-Help','Business','Education','Programming','Mathematics','Literature','Philosophy','Other'].forEach(cat => { %>
+              <option value="<%= cat %>"><%= cat %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Language</label>
+            <input type="text" name="language" class="form-control" value="English" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Pages</label>
+            <input type="number" name="pages" class="form-control" placeholder="e.g. 320" min="1" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Published Year</label>
+            <input type="number" name="publishedYear" class="form-control" placeholder="e.g. 2023" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Tags <span style="color:#aaa;font-size:0.8rem;">(comma separated)</span></label>
+            <input type="text" name="tags" class="form-control" placeholder="e.g. python, beginner" />
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Brief description..."></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">PDF File <span class="text-danger">*</span></label>
+            <input type="file" name="pdfFile" class="form-control" accept=".pdf" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Cover Image</label>
+            <input type="file" name="coverImage" class="form-control" accept="image/*" />
+          </div>
+        </div>
+        <div class="mt-4 d-flex gap-3">
+          <button type="submit" class="btn btn-grad px-5" style="padding:0.75rem 2rem;">
+            <i class="fa-solid fa-upload me-2"></i>Upload E-Book
+          </button>
+          <a href="/admin/ebooks" class="btn btn-outline-secondary px-4" style="border-radius:50px;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

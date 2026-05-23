@@ -1,0 +1,46 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-pen me-2"></i>Edit Blog Post</h2>
+    <p style="color:#888;font-size:0.9rem;">Update "<%= blog.title %>"</p>
+  </div>
+  <a href="/admin/blogs" class="btn btn-grad"><i class="fa-solid fa-arrow-left me-2"></i>Back to Blogs</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card p-4 anim-up">
+      <form action="/admin/blogs/<%= blog._id %>/edit" method="POST" novalidate>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input type="text" name="blog[title]" class="form-control" value="<%= blog.title %>" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Category</label>
+            <select name="blog[category]" class="form-select">
+              <% ['Other','News','Events','Tips','Reviews','Technology','Education','Announcements'].forEach(cat => { %>
+              <option value="<%= cat %>" <%= blog.category === cat ? 'selected' : '' %>><%= cat === 'Other' ? 'General' : cat %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Content <span class="text-danger">*</span></label>
+            <textarea name="blog[content]" class="form-control" rows="10" required><%= blog.content %></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Tags <span style="color:#aaa;font-size:0.8rem;">(comma separated)</span></label>
+            <input type="text" name="blog[tags]" class="form-control" value="<%= blog.tags ? blog.tags.join(', ') : '' %>" />
+          </div>
+        </div>
+        <div class="mt-4 d-flex gap-3">
+          <button type="submit" class="btn btn-grad px-5" style="padding:0.75rem 2rem;">
+            <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+          </button>
+          <a href="/admin/blogs" class="btn btn-outline-secondary px-4" style="border-radius:50px;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

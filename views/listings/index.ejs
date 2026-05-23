@@ -1,0 +1,119 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<!-- Section Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 mt-3 anim-down">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-book me-2"></i>Book Catalog</h2>
+    <p style="color:#888;font-size:0.9rem;margin:0;">Discover and borrow from our collection</p>
+  </div>
+  <% if (isAdmin) { %>
+  <a href="/listings/new" class="btn btn-grad">
+    <i class="fa-solid fa-plus me-2"></i>Add Book
+  </a>
+  <% } %>
+</div>
+
+<!-- Category Filter Bar -->
+<div class="glass-card p-3 mb-4 anim-down" style="animation-delay:0.1s;">
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <!-- Search box -->
+    <form method="GET" action="/listings" class="d-flex gap-2 flex-grow-1" style="max-width:400px;">
+      <input type="text" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>"
+        class="form-control form-control-sm" placeholder="Search by title, author, category..."
+        style="border-radius:50px;font-size:0.85rem;">
+      <button class="btn btn-sm btn-grad" type="submit" style="border-radius:50px;white-space:nowrap;">
+        <i class="fa-solid fa-magnifying-glass me-1"></i>Search
+      </button>
+      <% if (typeof search !== 'undefined' && search) { %>
+      <a href="/listings" class="btn btn-sm btn-outline-secondary" style="border-radius:50px;white-space:nowrap;">Clear</a>
+      <% } %>
+    </form>
+  </div>
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <span style="font-weight:600;color:#555;font-size:0.88rem;margin-right:0.5rem;">Filter:</span>
+    <button class="btn btn-sm filter-chip active-chip" onclick="filterCategory(this,'all')">
+      <i class="fa-solid fa-border-all me-1"></i>All
+    </button>
+    <button class="btn btn-sm filter-chip" onclick="filterCategory(this,'science')">
+      <i class="fa-solid fa-flask me-1"></i>Science
+    </button>
+    <button class="btn btn-sm filter-chip" onclick="filterCategory(this,'technology')">
+      <i class="fa-solid fa-microchip me-1"></i>Technology
+    </button>
+    <button class="btn btn-sm filter-chip" onclick="filterCategory(this,'literature')">
+      <i class="fa-solid fa-feather me-1"></i>Literature
+    </button>
+    <button class="btn btn-sm filter-chip" onclick="filterCategory(this,'history')">
+      <i class="fa-solid fa-landmark me-1"></i>History
+    </button>
+    <button class="btn btn-sm filter-chip" onclick="filterCategory(this,'mathematics')">
+      <i class="fa-solid fa-square-root-variable me-1"></i>Mathematics
+    </button>
+  </div>
+  <% if (typeof search !== 'undefined' && search) { %>
+  <div style="margin-top:8px;font-size:0.82rem;color:#667eea;">
+    <i class="fa-solid fa-magnifying-glass me-1"></i>
+    Showing results for "<strong><%= search %></strong>" — <%= allListings.length %> book(s) found
+  </div>
+  <% } %>
+</div>
+
+<!-- Book Grid -->
+<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 g-4 anim-up" id="listingContainer" style="animation-delay:0.2s;">
+  <% for(let listing of allListings) { %>
+  <div class="col">
+    <a href="/listings/<%= listing._id %>" class="listing-link">
+      <div class="card listing-card h-100">
+        <!-- Availability Badge -->
+        <% if (listing.availableQuantity > 0) { %>
+        <span class="avail-badge available"><i class="fa-solid fa-circle-check me-1"></i>Available</span>
+        <% } else { %>
+        <span class="avail-badge out"><i class="fa-solid fa-circle-xmark me-1"></i>Out of Stock</span>
+        <% } %>
+        <img src="<%= listing.image && listing.image.url ? listing.image.url : '' %>" class="card-img-top" alt="<%= listing.title %>" loading="lazy" />
+        <div class="card-body">
+          <p class="card-text">
+            <b><%= listing.title %></b>
+            <span style="color:#888;font-size:0.82rem;display:block;margin-top:0.2rem;">
+              <i class="fa-solid fa-user me-1" style="color:#667eea;"></i><%= listing.author || listing.country || 'Unknown Author' %>
+            </span>
+            <span style="color:#aaa;font-size:0.78rem;">
+              <i class="fa-solid fa-layer-group me-1"></i>Qty: <%= listing.totalQuantity || listing.price || 0 %>
+            </span>
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <% } %>
+</div>
+
+<style>
+  .filter-chip {
+    border-radius: 20px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: rgba(102,126,234,0.08);
+    color: #667eea;
+    border: 1.5px solid rgba(102,126,234,0.2);
+    transition: all 0.25s ease;
+  }
+  .filter-chip:hover, .active-chip {
+    background: var(--grad-primary);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+  }
+</style>
+
+<script>
+  function filterCategory(btn, cat) {
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active-chip'));
+    btn.classList.add('active-chip');
+    // Visual filter — real category filtering would need backend support
+    const cards = document.querySelectorAll('#listingContainer .col');
+    cards.forEach(c => c.style.display = '');
+  }
+</script>

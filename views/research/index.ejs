@@ -1,0 +1,71 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="d-flex align-items-center justify-content-between mb-4 mt-2 anim-down">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-flask me-2"></i>Research Papers</h2>
+    <p style="color:#888;font-size:0.9rem;">Academic papers and publications from our community</p>
+  </div>
+  <% if (currUser) { %>
+  <a href="/research/upload" class="btn btn-grad"><i class="fa-solid fa-upload me-2"></i>Upload Paper</a>
+  <% } %>
+</div>
+
+<% const paperList = papers && papers.docs ? papers.docs : (papers || []); %>
+
+<% if (!paperList || paperList.length === 0) { %>
+<div class="glass-card p-5 text-center anim-up">
+  <div style="font-size:3rem;margin-bottom:1rem;">🔬</div>
+  <h5 style="color:#555;font-weight:600;">No research papers yet</h5>
+  <p style="color:#aaa;font-size:0.9rem;">Upload the first research paper to get started.</p>
+  <% if (currUser) { %>
+  <a href="/research/upload" class="btn btn-grad mt-2"><i class="fa-solid fa-upload me-2"></i>Upload Paper</a>
+  <% } %>
+</div>
+<% } else { %>
+<div class="row g-4 anim-up">
+  <% for (let paper of paperList) { %>
+  <div class="col-md-6 col-lg-4">
+    <div class="glass-card p-4 h-100" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+      <div style="width:48px;height:48px;border-radius:12px;background:var(--grad-forest);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;margin-bottom:1rem;">
+        <i class="fa-solid fa-file-pdf"></i>
+      </div>
+      <span style="font-size:0.72rem;font-weight:700;background:rgba(67,233,123,0.1);color:#2d8a5e;padding:0.2rem 0.7rem;border-radius:50px;"><%= paper.category || 'Other' %></span>
+      <h6 style="font-weight:700;color:#1a1a2e;margin:0.7rem 0 0.5rem;line-height:1.4;"><%= paper.title %></h6>
+      <p style="font-size:0.82rem;color:#888;margin-bottom:0.8rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"><%= paper.abstract || '' %></p>
+      <div style="font-size:0.78rem;color:#aaa;margin-bottom:1rem;">
+        <span><i class="fa-solid fa-user me-1" style="color:#43e97b;"></i><%= paper.uploadedBy ? paper.uploadedBy.username : 'Unknown' %></span>
+        <% if (paper.keywords && paper.keywords.length > 0) { %>
+        <div style="margin-top:0.4rem;">
+          <% for (let kw of paper.keywords.slice(0,3)) { %>
+          <span style="background:rgba(67,233,123,0.1);color:#2d8a5e;border-radius:50px;padding:0.15rem 0.6rem;font-size:0.75rem;margin-right:0.3rem;">#<%= kw %></span>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="/research/<%= paper._id %>" class="btn btn-sm flex-fill" style="border-radius:50px;background:rgba(67,233,123,0.1);color:#2d8a5e;border:1px solid rgba(67,233,123,0.3);font-weight:600;font-size:0.82rem;">
+          <i class="fa-solid fa-eye me-1"></i>View
+        </a>
+        <% if (paper.pdfFile && paper.pdfFile.url) { %>
+        <a href="/research/<%= paper._id %>/download" class="btn btn-sm flex-fill" style="border-radius:50px;background:var(--grad-forest);color:#fff;border:none;font-weight:600;font-size:0.82rem;">
+          <i class="fa-solid fa-download me-1"></i>Download
+        </a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<% if (papers && papers.totalPages > 1) { %>
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    <% for (let i = 1; i <= papers.totalPages; i++) { %>
+    <li class="page-item <%= i === papers.page ? 'active' : '' %>">
+      <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+    </li>
+    <% } %>
+  </ul>
+</nav>
+<% } %>
+<% } %>

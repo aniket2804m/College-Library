@@ -1,0 +1,476 @@
+<% layout("/layouts/admin") %>
+
+<div class="anim-down mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+  <div>
+    <h2 class="section-title"><i class="fa-solid fa-calendar-check me-2"></i>Attendance Report</h2>
+    <p style="color:#888;font-size:0.9rem;">Student library attendance logs</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <form method="GET" action="/admin/attendance" class="d-flex gap-2 align-items-center">
+      <input type="date" name="date" value="<%= dateFilter %>"
+        class="form-control form-control-sm" style="border-radius:10px;width:160px;" />
+      <button class="btn btn-sm btn-grad" type="submit">Filter</button>
+      <% if (dateFilter) { %>
+        <a href="/admin/attendance" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;">Clear</a>
+      <% } %>
+    </form>
+    <button class="btn btn-grad" data-bs-toggle="modal" data-bs-target="#qrAttendanceModal" style="border-radius:50px;background:linear-gradient(135deg,#43e97b,#38f9d7);color:#1a1a2e;">
+      <i class="fa-solid fa-qrcode me-2"></i>QR Attendance
+    </button>
+    <button class="btn btn-grad" data-bs-toggle="modal" data-bs-target="#manualMarkModal" style="border-radius:50px;">
+      <i class="fa-solid fa-user-check me-2"></i>Mark Manually
+    </button>
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#wifiModal" style="border-radius:50px;">
+      <i class="fa-solid fa-wifi me-2"></i>WiFi Settings
+      <% if (wifiConfigs.filter(w=>w.isActive).length > 0) { %>
+        <span class="badge bg-success ms-1" style="font-size:0.65rem;"><%= wifiConfigs.filter(w=>w.isActive).length %> active</span>
+      <% } %>
+    </button>
+  </div>
+</div>
+
+<!-- ── QR Attendance Modal ─────────────────────────────────────────────────── -->
+<div class="modal fade" id="qrAttendanceModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+    <div class="modal-content" style="border-radius:24px;border:none;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.22);">
+      <div class="modal-header" style="background:linear-gradient(135deg,#43e97b,#38f9d7);border-radius:0;">
+        <div>
+          <h5 class="modal-title" style="color:#1a1a2e;font-weight:800;"><i class="fa-solid fa-qrcode me-2"></i>Live QR Attendance</h5>
+          <div style="font-size:0.75rem;color:rgba(26,26,46,0.6);">Rotates every 30 seconds — show to students</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" id="qrModalCloseBtn"></button>
+      </div>
+      <div class="modal-body p-4 text-center">
+        <!-- QR Code display -->
+        <div id="qrWrapper" style="position:relative;display:inline-block;margin-bottom:1rem;">
+          <div id="qrCanvas" style="width:220px;height:220px;margin:0 auto;border-radius:16px;overflow:hidden;background:#f8f9ff;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem;color:#43e97b;"></i>
+          </div>
+          <!-- Countdown ring overlay -->
+          <div id="qrExpireOverlay" style="display:none;position:absolute;inset:0;background:rgba(245,87,108,0.85);border-radius:16px;align-items:center;justify-content:center;flex-direction:column;color:#fff;">
+            <i class="fa-solid fa-rotate" style="font-size:2rem;margin-bottom:6px;"></i>
+            <div style="font-weight:700;font-size:0.9rem;">Refreshing...</div>
+          </div>
+        </div>
+
+        <!-- Countdown bar -->
+        <div style="margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:0.78rem;color:#888;font-weight:600;">Code expires in</span>
+            <span id="qrCountdown" style="font-size:1.1rem;font-weight:800;color:#1a9e4e;">--s</span>
+          </div>
+          <div style="height:6px;background:#e8f5e9;border-radius:50px;overflow:hidden;">
+            <div id="qrProgressBar" style="height:100%;background:linear-gradient(90deg,#43e97b,#38f9d7);border-radius:50px;transition:width 1s linear;width:100%;"></div>
+          </div>
+        </div>
+
+        <!-- Security info -->
+        <div style="background:rgba(102,126,234,0.06);border-radius:12px;padding:12px 16px;text-align:left;font-size:0.78rem;color:#555;line-height:1.6;">
+          <div style="font-weight:700;color:#1a1a2e;margin-bottom:4px;"><i class="fa-solid fa-shield-halved me-1" style="color:#667eea;"></i>Security Features</div>
+          <div><i class="fa-solid fa-check me-1" style="color:#43e97b;"></i>Token rotates every 30 seconds</div>
+          <div><i class="fa-solid fa-check me-1" style="color:#43e97b;"></i>Each token usable once per student</div>
+          <div><i class="fa-solid fa-check me-1" style="color:#43e97b;"></i>HMAC-signed — cannot be forged</div>
+          <div><i class="fa-solid fa-check me-1" style="color:#43e97b;"></i>Requires login to mark attendance</div>
+        </div>
+
+        <!-- Today's scan count -->
+        <div id="qrScanCount" style="margin-top:12px;font-size:0.82rem;color:#888;">
+          <i class="fa-solid fa-users me-1" style="color:#667eea;"></i>
+          <span id="qrScanCountText">Loading today's count...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WiFi Status Banner -->
+<% if (wifiConfigs.length > 0) { %>
+<div class="glass-card p-3 mb-4 anim-up d-flex align-items-center gap-3 flex-wrap" style="border-left:4px solid #43e97b;">
+  <i class="fa-solid fa-wifi" style="color:#43e97b;font-size:1.3rem;"></i>
+  <div style="flex:1;">
+    <div style="font-weight:700;font-size:0.9rem;color:#1a1a2e;">WiFi-Based Attendance Active</div>
+    <div style="font-size:0.78rem;color:#888;">
+      Students must be connected to an allowed WiFi network to mark attendance.
+      <strong><%= wifiConfigs.filter(w=>w.isActive).length %></strong> active /
+      <strong><%= wifiConfigs.length %></strong> total configured.
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    <% for (const w of wifiConfigs.filter(w=>w.isActive)) { %>
+    <span style="background:rgba(67,233,123,0.12);color:#1a9e4e;border-radius:50px;padding:3px 12px;font-size:0.75rem;font-weight:700;">
+      <i class="fa-solid fa-circle-dot me-1"></i><%= w.name %>
+    </span>
+    <% } %>
+  </div>
+</div>
+<% } else { %>
+<div class="glass-card p-3 mb-4 anim-up d-flex align-items-center gap-3" style="border-left:4px solid #feca57;">
+  <i class="fa-solid fa-triangle-exclamation" style="color:#feca57;font-size:1.2rem;"></i>
+  <div>
+    <div style="font-weight:700;font-size:0.9rem;color:#1a1a2e;">No WiFi Configured — Using GPS Geofence</div>
+    <div style="font-size:0.78rem;color:#888;">Add a library WiFi network to enable WiFi-based attendance verification.</div>
+  </div>
+  <button class="btn btn-sm btn-grad ms-auto" data-bs-toggle="modal" data-bs-target="#wifiModal" style="border-radius:50px;">
+    <i class="fa-solid fa-plus me-1"></i>Add WiFi
+  </button>
+</div>
+<% } %>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4 anim-up">
+  <div class="col-6 col-md-3">
+    <div class="glass-card p-3 text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><%= total %></div>
+      <div style="font-size:0.8rem;color:#888;">Total Records</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card p-3 text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-forest);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        <%= records.filter(r => r.timeOut).length %>
+      </div>
+      <div style="font-size:0.8rem;color:#888;">Checked Out</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card p-3 text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-ocean);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        <%= [...new Set(records.map(r => r.studentId && r.studentId._id ? r.studentId._id.toString() : ''))].length %>
+      </div>
+      <div style="font-size:0.8rem;color:#888;">Unique Students</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card p-3 text-center">
+      <div style="font-size:2rem;font-weight:800;background:var(--grad-sunset);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><%= totalPages %></div>
+      <div style="font-size:0.8rem;color:#888;">Pages</div>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance trend chart -->
+<div class="glass-card p-4 mb-4 anim-up">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h6 class="section-title mb-0"><i class="fa-solid fa-chart-line me-2"></i>Daily Attendance (Last 14 Days)</h6>
+    <a href="https://www.google.com/maps?q=17.8878880,75.3720230" target="_blank"
+      style="font-size:0.82rem;color:#667eea;text-decoration:none;display:flex;align-items:center;gap:6px;background:rgba(102,126,234,0.08);padding:6px 14px;border-radius:50px;">
+      <i class="fa-solid fa-location-dot" style="color:#f5576c;"></i>
+      Siddhant College of Engineering, Solapur Rd, Pune — 17.8879°N, 75.3720°E
+      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.7rem;"></i>
+    </a>
+  </div>
+  <div style="position:relative;height:220px;">
+    <canvas id="attChart"></canvas>
+  </div>
+</div>
+
+<!-- Library Location Map -->
+<div class="glass-card p-4 mb-4 anim-up">
+  <h6 class="section-title mb-3"><i class="fa-solid fa-map-location-dot me-2"></i>Library Location</h6>
+  <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d500!2d75.3720230!3d17.8878880!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMTfCsDUzJzE2LjQiTiA3NcKwMjInMTkuMyJF!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+      width="100%" height="300" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  </div>
+  <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:0.82rem;color:#555;">
+      <i class="fa-solid fa-location-dot me-1" style="color:#f5576c;"></i>
+      <strong>Siddhant College of Engineering</strong>, Solapur Road, Pune, Maharashtra
+    </div>
+    <div style="display:flex;gap:8px;">
+      <span style="font-size:0.75rem;background:rgba(102,126,234,0.1);color:#667eea;padding:4px 12px;border-radius:50px;">
+        <i class="fa-solid fa-circle-dot me-1"></i>Geofence: 10m radius
+      </span>
+      <a href="https://www.google.com/maps?q=17.8878880,75.3720230" target="_blank"
+        class="btn btn-sm btn-grad" style="border-radius:50px;font-size:0.75rem;padding:4px 14px;">
+        <i class="fa-solid fa-diamond-turn-right me-1"></i>Get Directions
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Records table -->
+<div class="glass-card p-4 anim-up">
+  <h6 class="section-title mb-3"><i class="fa-solid fa-table me-2"></i>Attendance Logs</h6>
+  <% if (records.length === 0) { %>
+    <div class="text-center py-5" style="color:#aaa;">
+      <i class="fa-solid fa-calendar-xmark" style="font-size:2.5rem;display:block;margin-bottom:0.5rem;"></i>
+      No attendance records found<%= dateFilter ? ` for ${dateFilter}` : '' %>.
+    </div>
+  <% } else { %>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" style="font-size:0.85rem;">
+      <thead style="background:rgba(102,126,234,0.06);">
+        <tr>
+          <th>Student</th>
+          <th>Department</th>
+          <th>Date</th>
+          <th>Time In</th>
+          <th>Time Out</th>
+          <th>Via</th>
+          <th>WiFi</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (let r of records) { %>
+        <tr>
+          <td>
+            <div style="font-weight:600;color:#1a1a2e;"><%= r.studentId ? r.studentId.username : 'Deleted User' %></div>
+            <div style="font-size:0.75rem;color:#aaa;"><%= r.studentId ? r.studentId.email : '' %></div>
+          </td>
+          <td style="color:#888;"><%= r.studentId && r.studentId.department ? r.studentId.department : '—' %></td>
+          <td><%= new Date(r.date).toLocaleDateString('en-IN') %></td>
+          <td><%= r.timeIn ? new Date(r.timeIn).toLocaleTimeString() : '—' %></td>
+          <td><%= r.timeOut ? new Date(r.timeOut).toLocaleTimeString() : '—' %></td>
+          <td>
+            <span style="background:rgba(102,126,234,0.1);color:#667eea;border-radius:50px;padding:2px 10px;font-size:0.72rem;font-weight:600;text-transform:capitalize;">
+              <% if (r.markedVia === 'qr') { %><i class="fa-solid fa-qrcode me-1"></i><% } %><%= r.markedVia %>
+            </span>
+          </td>
+          <td style="font-size:0.75rem;color:#888;">
+            <% if (r.markedViaWifi) { %>
+              <span style="background:rgba(67,233,123,0.1);color:#1a9e4e;border-radius:50px;padding:2px 8px;font-size:0.72rem;font-weight:600;">
+                <i class="fa-solid fa-wifi me-1"></i><%= r.markedViaWifi %>
+              </span>
+            <% } else { %>—<% } %>
+          </td>
+          <td>
+            <% if (r.timeOut) { %>
+              <span style="background:rgba(67,233,123,0.12);color:#1a9e4e;border-radius:50px;padding:2px 10px;font-size:0.72rem;font-weight:700;">Full Day</span>
+            <% } else { %>
+              <span style="background:rgba(79,172,254,0.12);color:#0066cc;border-radius:50px;padding:2px 10px;font-size:0.72rem;font-weight:700;">Checked In</span>
+            <% } %>
+          </td>
+          <td>
+            <form method="POST" action="/admin/attendance/delete/<%= r._id %>" onsubmit="return confirm('Delete this record?')">
+              <button class="btn btn-sm btn-outline-danger" style="border-radius:50px;font-size:0.72rem;padding:0.2rem 0.7rem;" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+  <div class="d-flex justify-content-center gap-2 mt-3">
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <a href="/admin/attendance?page=<%= i %><%= dateFilter ? '&date=' + dateFilter : '' %>"
+        class="btn btn-sm <%= currentPage === i ? 'btn-grad' : 'btn-outline-secondary' %>"
+        style="border-radius:8px;min-width:36px;">
+        <%= i %>
+      </a>
+    <% } %>
+  </div>
+  <% } %>
+  <% } %>
+</div>
+
+<script src="/js/chart.umd.min.js"></script>
+<!-- QR Code library (pure JS, no dependencies) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // ── Attendance chart ──────────────────────────────────────────────────────
+  const dailyCounts = <%- JSON.stringify(dailyCounts) %>;
+  const ctx = document.getElementById('attChart');
+  if (ctx && dailyCounts.length > 0) {
+    const labels = dailyCounts.map(d => new Date(d._id).toLocaleDateString('en-IN', { month:'short', day:'numeric' }));
+    const values = dailyCounts.map(d => d.count);
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Students Present',
+          data: values,
+          backgroundColor: 'rgba(102,126,234,0.7)',
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── QR Attendance System ──────────────────────────────────────────────────
+  let qrInstance   = null;
+  let qrInterval   = null;
+  let countInterval = null;
+  let currentSecs  = 30;
+  let windowSecs   = 30;
+
+  async function fetchAndRenderQR() {
+    try {
+      const res  = await fetch('/attendance/qr-token');
+      const data = await res.json();
+      currentSecs = data.secsRemaining;
+      windowSecs  = data.windowSecs || 30;
+
+      const canvas = document.getElementById('qrCanvas');
+      canvas.innerHTML = '';
+
+      // Destroy old instance
+      if (qrInstance) { try { qrInstance.clear(); } catch(e){} qrInstance = null; }
+
+      // Generate new QR
+      qrInstance = new QRCode(canvas, {
+        text: data.qrUrl,
+        width: 220,
+        height: 220,
+        colorDark: '#1a1a2e',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // Hide expire overlay
+      document.getElementById('qrExpireOverlay').style.display = 'none';
+
+      // Update scan count
+      updateScanCount();
+
+      // Start countdown
+      startCountdown(currentSecs);
+    } catch(e) {
+      console.error('QR fetch error', e);
+    }
+  }
+
+  function startCountdown(secs) {
+    clearInterval(countInterval);
+    currentSecs = secs;
+    updateCountdownUI(currentSecs);
+
+    countInterval = setInterval(() => {
+      currentSecs--;
+      updateCountdownUI(currentSecs);
+      if (currentSecs <= 0) {
+        clearInterval(countInterval);
+        // Show refreshing overlay
+        document.getElementById('qrExpireOverlay').style.display = 'flex';
+        fetchAndRenderQR();
+      }
+    }, 1000);
+  }
+
+  function updateCountdownUI(secs) {
+    const el  = document.getElementById('qrCountdown');
+    const bar = document.getElementById('qrProgressBar');
+    if (!el || !bar) return;
+    el.textContent = secs + 's';
+    const pct = (secs / windowSecs) * 100;
+    bar.style.width = pct + '%';
+    // Color shift: green → yellow → red
+    if (secs > 15) {
+      bar.style.background = 'linear-gradient(90deg,#43e97b,#38f9d7)';
+      el.style.color = '#1a9e4e';
+    } else if (secs > 8) {
+      bar.style.background = 'linear-gradient(90deg,#feca57,#ff9f43)';
+      el.style.color = '#b7791f';
+    } else {
+      bar.style.background = 'linear-gradient(90deg,#f5576c,#f093fb)';
+      el.style.color = '#c0392b';
+    }
+  }
+
+  async function updateScanCount() {
+    try {
+      // Fetch today's QR-marked attendance count
+      const res  = await fetch('/admin/attendance?page=1', { headers: { 'Accept': 'application/json' } });
+      // We can't easily get count from HTML — just show a static note
+      document.getElementById('qrScanCountText').textContent = 'QR scan active — students can scan now';
+    } catch(e) {}
+  }
+
+  // Start QR when modal opens
+  const qrModal = document.getElementById('qrAttendanceModal');
+  qrModal.addEventListener('show.bs.modal', () => {
+    fetchAndRenderQR();
+  });
+
+  // Stop intervals when modal closes
+  qrModal.addEventListener('hide.bs.modal', () => {
+    clearInterval(qrInterval);
+    clearInterval(countInterval);
+    if (qrInstance) { try { qrInstance.clear(); } catch(e){} qrInstance = null; }
+    document.getElementById('qrCanvas').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem;color:#43e97b;"></i>';
+  });
+</script>
+
+<!-- Manual Mark Attendance Modal -->
+<div class="modal fade" id="manualMarkModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#43e97b,#38f9d7);border-radius:16px 16px 0 0;">
+        <h5 class="modal-title text-white"><i class="fa-solid fa-user-check me-2"></i>Mark Attendance Manually</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="/admin/attendance/mark">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Student <span class="text-danger">*</span></label>
+            <select name="studentId" class="form-select" required style="border-radius:10px;">
+              <option value="">— Select Student —</option>
+              <% students.forEach(s => { %>
+              <option value="<%= s._id %>"><%= s.username %> <%= s.email ? `(${s.email})` : '' %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" name="date" class="form-control" style="border-radius:10px;"
+              value="<%= new Date().toISOString().split('T')[0] %>">
+            <div style="font-size:0.75rem;color:#888;margin-top:4px;">Leave as today or pick a past date.</div>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Time In</label>
+              <input type="time" name="timeIn" class="form-control" style="border-radius:10px;"
+                value="<%= new Date().toTimeString().slice(0,5) %>">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Time Out <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+              <input type="time" name="timeOut" class="form-control" style="border-radius:10px;">
+            </div>
+          </div>
+          <div style="background:#f0fff8;border-radius:10px;padding:10px 14px;margin-top:16px;font-size:0.8rem;color:#555;">
+            <i class="fa-solid fa-circle-info me-1" style="color:#43e97b;"></i>
+            If the student already has a record for that date, it will be updated. Geofence is bypassed for manual entries.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:50px;">Cancel</button>
+          <button type="submit" class="btn btn-grad" style="border-radius:50px;background:linear-gradient(135deg,#43e97b,#38f9d7);color:#1a1a2e;">
+            <i class="fa-solid fa-check me-2"></i>Mark Attendance
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- WiFi Settings Modal — Phone-style UI -->
+<div class="modal fade" id="wifiModal" tabindex="-1">
+  <div class="modal-dialog" style="max-width:420px;">
+    <div class="modal-content" style="border-radius:24px;border:none;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.22);">
+
+      <!-- Phone status bar -->
+      <div style="background:#1a1a2e;padding:8px 20px 0;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:rgba(255,255,255,0.5);font-size:0.7rem;" id="wifiClock">--:--</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <i cla

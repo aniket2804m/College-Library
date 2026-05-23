@@ -1,0 +1,85 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-7">
+    <!-- Header -->
+    <div class="text-center mb-4 anim-down">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff;box-shadow:0 8px 24px rgba(102,126,234,0.4);">
+        <i class="fa-solid fa-plus"></i>
+      </div>
+      <h2 class="section-title">Add New Book</h2>
+      <p style="color:#888;font-size:0.9rem;">Fill in the details to add a book to the catalog</p>
+    </div>
+
+    <div class="form-wrapper anim-up">
+      <form action="/listings" method="POST" enctype="multipart/form-data" novalidate>
+
+        <div class="mb-3">
+          <label class="form-label">Book Title <span style="color:#f5576c;">*</span></label>
+          <input type="text" name="listing[title]" class="form-control" placeholder="e.g. Clean Code" required />
+          <div class="invalid-feedback">Please enter a book title.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Author <span style="color:#f5576c;">*</span></label>
+          <input type="text" name="listing[author]" class="form-control" placeholder="e.g. Robert C. Martin" required />
+          <!-- keep country in sync for backward compat -->
+          <input type="hidden" name="listing[country]" value="" id="authorHidden" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="listing[category]" class="form-select">
+            <% ['Fiction','Non-Fiction','Science','Technology','History','Biography','Self-Help','Business','Education','Programming','Mathematics','Physics','Chemistry','Literature','Philosophy','Psychology','Other'].forEach(cat => { %>
+            <option value="<%= cat %>"><%= cat %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="listing[description]" class="form-control" rows="4" placeholder="Brief description of the book..."></textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-sm-4">
+            <label class="form-label">Shelf / Location</label>
+            <input type="text" name="listing[location]" class="form-control" placeholder="e.g. Shelf A-3" />
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Total Quantity <span style="color:#f5576c;">*</span></label>
+            <input type="number" name="listing[totalQuantity]" id="totalQty" class="form-control" placeholder="e.g. 5" min="1" required />
+            <input type="hidden" name="listing[price]" id="priceHidden" value="1" />
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Available Qty</label>
+            <input type="number" name="listing[availableQuantity]" id="availQty" class="form-control" placeholder="Same as total" min="0" />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Book Cover Image</label>
+          <input type="file" name="image" class="form-control" accept="image/*" />
+          <div style="font-size:0.8rem;color:#aaa;margin-top:0.3rem;">Supported: JPG, PNG, WEBP</div>
+        </div>
+
+        <button type="submit" class="btn btn-grad w-100" style="padding:0.8rem;">
+          <i class="fa-solid fa-plus me-2"></i>Add Book to Catalog
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Keep price (legacy) in sync with totalQuantity
+  document.getElementById('totalQty').addEventListener('input', function() {
+    document.getElementById('priceHidden').value = this.value || 1;
+    const avail = document.getElementById('availQty');
+    if (!avail.value) avail.value = this.value;
+  });
+  // Keep country (legacy) in sync with author
+  document.querySelector('[name="listing[author]"]').addEventListener('input', function() {
+    document.getElementById('authorHidden').value = this.value;
+  });
+</script>

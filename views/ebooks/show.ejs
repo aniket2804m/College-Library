@@ -1,0 +1,55 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="row justify-content-center py-4">
+  <div class="col-lg-8">
+    <div class="glass-card overflow-hidden anim-up">
+      <div style="height:6px;background:var(--grad-ocean);"></div>
+      <div class="p-4 p-md-5">
+        <div class="row g-4">
+          <div class="col-md-4 text-center">
+            <% if (ebook.coverImage && ebook.coverImage.url) { %>
+            <img src="<%= ebook.coverImage.url %>" alt="<%= ebook.title %>" style="width:100%;max-width:200px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);" />
+            <% } else { %>
+            <div style="width:160px;height:200px;border-radius:12px;background:var(--grad-ocean);display:flex;align-items:center;justify-content:center;font-size:4rem;color:rgba(255,255,255,0.6);margin:0 auto;">📖</div>
+            <% } %>
+          </div>
+          <div class="col-md-8">
+            <span style="font-size:0.78rem;font-weight:700;background:rgba(79,172,254,0.1);color:#4facfe;padding:0.25rem 0.8rem;border-radius:50px;"><%= ebook.category %></span>
+            <h2 style="font-size:1.6rem;font-weight:800;color:#1a1a2e;margin:0.8rem 0 0.4rem;"><%= ebook.title %></h2>
+            <p style="color:#666;font-size:0.95rem;margin-bottom:1rem;"><i class="fa-solid fa-user me-1" style="color:#4facfe;"></i><%= ebook.author %></p>
+            <% if (ebook.description) { %>
+            <p style="color:#555;line-height:1.7;font-size:0.9rem;margin-bottom:1.2rem;"><%= ebook.description %></p>
+            <% } %>
+            <div style="display:flex;flex-wrap:wrap;gap:0.8rem;font-size:0.82rem;color:#888;margin-bottom:1.5rem;">
+              <% if (ebook.language) { %><span><i class="fa-solid fa-language me-1" style="color:#4facfe;"></i><%= ebook.language %></span><% } %>
+              <% if (ebook.pages) { %><span><i class="fa-solid fa-file-lines me-1" style="color:#43e97b;"></i><%= ebook.pages %> pages</span><% } %>
+              <% if (ebook.publishedYear) { %><span><i class="fa-solid fa-calendar me-1" style="color:#feca57;"></i><%= ebook.publishedYear %></span><% } %>
+              <span><i class="fa-solid fa-download me-1" style="color:#667eea;"></i><%= ebook.downloads %> downloads</span>
+              <span><i class="fa-solid fa-eye me-1" style="color:#f093fb;"></i><%= ebook.views %> views</span>
+            </div>
+            <% if (ebook.tags && ebook.tags.length > 0) { %>
+            <div style="margin-bottom:1.5rem;">
+              <% for (let tag of ebook.tags) { %>
+              <span style="display:inline-block;background:rgba(79,172,254,0.1);color:#4facfe;border-radius:50px;padding:0.2rem 0.7rem;font-size:0.78rem;font-weight:600;margin:0.2rem;">#<%= tag %></span>
+              <% } %>
+            </div>
+            <% } %>
+            <div class="d-flex gap-3 flex-wrap">
+              <a href="/ebooks/<%= ebook._id %>/download" class="btn btn-grad">
+                <i class="fa-solid fa-download me-2"></i>Download PDF
+              </a>
+              <% if (currUser && ebook.uploadedBy && (currUser.username === ebook.uploadedBy.username || isAdmin)) { %>
+              <form method="POST" action="/ebooks/<%= ebook._id %>?_method=DELETE">
+                <button type="submit" class="btn btn-outline-danger" style="border-radius:50px;"><i class="fa-solid fa-trash me-2"></i>Delete</button>
+              </form>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-3">
+      <a href="/ebooks" style="color:#4facfe;text-decoration:none;font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-arrow-left me-1"></i>Back to E-Books</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookShelf Admin — Siddhant College of Engineering, Pune</title>
+  <link href="/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/all.min.css"/>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    :root {
+      --sidebar-w: 240px;
+      --sidebar-bg: linear-gradient(180deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      --sidebar-active: rgba(102,126,234,0.25);
+      --sidebar-hover: rgba(255,255,255,0.07);
+    }
+    body { background: #f0f2f8; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    #adminSidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-w);
+      background: var(--sidebar-bg); z-index: 1040; display: flex; flex-direction: column;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.3); transition: transform 0.3s ease;
+    }
+    .sidebar-brand {
+      padding: 1.4rem 1.2rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; gap: 0.7rem;
+    }
+    .sidebar-brand .brand-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg,#667eea,#764ba2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #fff; flex-shrink: 0;
+    }
+    .sidebar-brand .brand-text { font-size: 1rem; font-weight: 800; color: #fff; line-height: 1.2; }
+    .sidebar-brand .brand-sub { font-size: 0.7rem; color: rgba(255,255,255,0.45); }
+
+    .sidebar-section { padding: 0.8rem 0.8rem 0.3rem; font-size: 0.65rem; font-weight: 700;
+      color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; }
+
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 0.4rem 0.6rem; }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .s-link {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.6rem 0.9rem; border-radius: 10px; margin-bottom: 2px;
+      color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem;
+      font-weight: 500; transition: all 0.2s; position: relative;
+    }
+    .s-link:hover { background: var(--sidebar-hover); color: #fff; transform: translateX(3px); }
+    .s-link.active { background: var(--sidebar-active); color: #fff; }
+    .s-link.active::before {
+      content: ''; position: absolute; left: 0; top: 20%; height: 60%;
+      width: 3px; background: linear-gradient(135deg,#667eea,#f093fb);
+      border-radius: 0 3px 3px 0;
+    }
+    .s-link .s-icon { width: 28px; height: 28px; border-radius: 7px; display: flex;
+      align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;
+      background: rgba(255,255,255,0.07); }
+    .s-link.active .s-icon { background: linear-gradient(135deg,#667eea,#764ba2); }
+    .s-badge { margin-left: auto; background: var(--grad-fire); color: #fff;
+      font-size: 0.65rem; font-weight: 700; padding: 1px 7px; border-radius: 20px; }
+
+    .sidebar-footer {
+      padding: 0.8rem; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem;
+      border-radius: 10px; background: rgba(255,255,255,0.05);
+    }
+    .sidebar-user .u-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg,#667eea,#f093fb);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+    }
+    .sidebar-user .u-name { font-size: 0.82rem; font-weight: 600; color: #fff; }
+    .sidebar-user .u-role { font-size: 0.68rem; color: rgba(255,255,255,0.4); }
+
+    /* ── Top bar ── */
+    #adminTopbar {
+      position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: 60px;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.5rem; z-index: 1030; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .topbar-title { font-size: 1rem; font-weight: 700; color: #1a1a2e; }
+    .topbar-right { display: flex; align-items: center; gap: 0.8rem; }
+    .topbar-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: rgba(102,126,234,0.08); color: #667eea;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.9rem; transition: all 0.2s; text-decoration: none;
+    }
+    .topbar-btn:hover { background: rgba(102,126,234,0.18); color: #667eea; transform: scale(1.05); }
+
+    /* ── Main content ── */
+    #adminMain {
+      margin-left: var(--sidebar-w); margin-top: 60px;
+      padding: 1.8rem; min-height: calc(100vh - 60px);
+    }
+
+    /* ── Flash messages ── */
+    .admin-flash { position: fixed; top: 70px; right: 1.5rem; z-index: 2000; min-width: 280px; }
+
+    /* ── Mobile ── */
+    #sidebarOverlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 1039; backdrop-filter: blur(2px);
+    }
+    @media (max-width: 768px) {
+      #adminSidebar { transform: translateX(-100%); }
+      #adminSidebar.open { transform: translateX(0); }
+      #sidebarOverlay.open { display: block; }
+      #adminMain { margin-left: 0; }
+      #adminTopbar { left: 0; }
+    }
+    /* Always keep sidebar visible on desktop */
+    @media (min-width: 769px) {
+      #adminSidebar { transform: translateX(0) !important; }
+      #adminMain { margin-left: var(--sidebar-w) !important; }
+      #adminTopbar { left: var(--sidebar-w) !important; }
+      #sidebarOverlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar Overlay (mobile) -->
+<div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ── Admin Sidebar ── -->
+<aside id="adminSidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+    <div>
+      <div class="brand-text">BookShelf</div>
+      <div class="brand-sub">Siddhant College of Engineering</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Overview</div>
+    <% const cp = currentPath || ''; %>
+    <a href="/admin/dashboard" class="s-link <%= cp === '/admin/dashboard' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-chart-line"></i></span> Dashboard
+    </a>
+    <% if (isAdmin) { %>
+    <a href="/admin/reports" class="s-link <%= cp === '/admin/reports' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-chart-bar"></i></span> Reports
+    </a>
+    <% } %>
+
+    <div class="sidebar-section">Users</div>
+    <a href="/admin/users" class="s-link <%= cp === '/admin/users' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-users"></i></span> All Users
+    </a>
+    <% if (isAdmin) { %>
+    <a href="/admin/users/add" class="s-link <%= cp === '/admin/users/add' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-user-plus"></i></span> Add Student
+    </a>
+    <% } %>
+    <a href="/admin/users/pending" class="s-link <%= cp === '/admin/users/pending' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-user-clock"></i></span> Pending Approval
+      <% if (pendingCount > 0) { %><span class="s-badge"><%= pendingCount %></span><% } %>
+    </a>
+
+    <div class="sidebar-section">Library</div>
+    <a href="/admin/books" class="s-link <%= cp === '/admin/books' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-book"></i></span> Books
+    </a>
+    <a href="/admin/books/new" class="s-link <%= cp === '/admin/books/new' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-plus"></i></span> Add Book
+    </a>
+    <a href="/admin/borrows" class="s-link <%= cp === '/admin/borrows' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-bookmark"></i></span> Borrows
+    </a>
+    <a href="/admin/attendance" class="s-link <%= cp === '/admin/attendance' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-calendar-check"></i></span> Attendance
+    </a>
+    <a href="/admin/ebooks" class="s-link <%= cp === '/admin/ebooks' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-tablet-screen-button"></i></span> E-Books
+    </a>
+
+    <div class="sidebar-section">Content</div>
+    <a href="/admin/research" class="s-link <%= cp === '/admin/research' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-flask"></i></span> Research
+    </a>
+    <a href="/admin/blogs" class="s-link <%= cp === '/admin/blogs' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-newspaper"></i></span> Blogs
+    </a>
+    <a href="/admin/notices" class="s-link <%= cp === '/admin/notices' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-bullhorn"></i></span> Notices
+    </a>
+
+    <div class="sidebar-section">Tools</div>
+    <a href="/admin/qr" class="s-link <%= cp === '/admin/qr' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-qrcode"></i></span> QR Generator
+    </a>
+    <a href="/qr/scanner" class="s-link <%= cp === '/qr/scanner' ? 'active' : '' %>">
+      <span class="s-icon"><i class="fa-solid fa-camera"></i></span> QR Scanner
+    </a>
+    <a href="/" class="s-link">
+      <span class="s-icon"><i class="fa-solid fa-globe"></i></span> View Site
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="u-avatar"><%= currUser ? currUser.username.charAt(0).toUpperCase() : 'A' %></div>
+      <div>
+        <div class="u-name"><%= currUser ? currUser.username : 'Admin' %></div>
+        <div class="u-role"><%= currUser ? currUser.role : 'admin' %></div>
+      </div>
+    </div>
+    <a href="/logout" class="s-link mt-2" style="color:rgba(255,100,100,0.8);">
+      <span class="s-icon" style="background:rgba(255,100,100,0.1);"><i class="fa-solid fa-right-from-bracket"></i></span> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- ── Top Bar ── -->
+<div id="adminTopbar">
+  <div class="d-flex align-items-center gap-3">
+    <button class="topbar-btn d-md-none" onclick="toggleSidebar()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <span class="topbar-title"><i class="fa-solid fa-shield-halved me-2" style="color:#667eea;"></i>Admin Panel</span>
+  </div>
+  <div class="topbar-right">
+    <a href="/notifications" class="topbar-btn" style="position:relative;" title="Notifications">
+      <i class="fa-solid fa-bell"></i>
+      <% if (unreadNotifCount > 0) { %>
+      <span style="position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#f5576c,#f093fb);font-size:0.55rem;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;"><%= unreadNotifCount %></span>
+      <% } %>
+    </a>
+    <a href="/admin/users/pending" class="topbar-btn" title="Pending Approvals">
+      <i class="fa-solid fa-user-clock"></i>
+    </a>
+    <a href="/" class="topbar-btn" title="View Site">
+      <i class="fa-solid fa-globe"></i>
+    </a>
+    <a href="/profile" class="topbar-btn" title="Profile">
+      <i class="fa-solid fa-circle-user"></i>
+    </a>
+  </div>
+</div>
+
+<!-- ── Flash Messages ── -->
+<div class="admin-flash">
+  <% if (success && success.length > 0) { %>
+    <% for (let msg of success) { %>
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" style="border-radius:12px;border:none;">
+      <i class="fa-solid fa-circle-check me-2"></i><%= msg %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+  <% } %>
+  <% if (error && error.length > 0) { %>
+    <% for (let msg of error) { %>
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert" style="border-radius:12px;border:none;">
+      <i class="fa-solid fa-circle-exclamation me-2"></i><%= msg %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+  <% } %>
+</div>
+
+<!-- ── Main Content ── -->
+<main id="adminMain">
+  <%- body %>
+</main>
+
+<script src="/js/bootstrap.bundle.min.js"></script>
+  <!-- Always-On Voice Bot (click-to-activate) -->
+  <script src="/js/alwaysOnVoiceBot.js"></script>
+
+  <!-- AI Chatbot Widget -->
+  <div id="chatbotWidget">
+    <button id="chatbotToggle" title="AI Library Assistant">
+      <i class="fa-solid fa-robot"></i>
+    </button>
+    <div id="chatbotBox">
+      <div id="chatbotHeader">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;"><i class="fa-solid fa-robot"></i></div>
+          <div><div style="font-weight:700;font-size:0.9rem;">Library Assistant</div><div style="font-size:0.72rem;opacity:0.8;">AI-powered help</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="chatVoiceToggle" title="Toggle voice reply" onclick="toggleChatVoice()"
+            style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:all 0.2s;">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+          <button onclick="document.getElementById('chatbotBox').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;padding:0;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div id="chatbotMessages">
+        <div class="bot-msg">👋 Hi! I'm your Library Assistant. Ask me to find books, check availability, or learn about library rules!</div>
+      </div>
+      <div id="chatbotInput">
+        <input type="text" id="chatInput" placeholder="Ask me anything..." />
+        <button id="chatSend"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #chatbotWidget { position: fixed; bottom: 24px; right: 28px; z-index: 998; }
+    #chatbotToggle { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg,#a18cd1,#fbc2eb); border: none; color: #fff; font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 20px rgba(161,140,209,0.5); transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
+    #chatbotToggle:hover { transform: scale(1.1); }
+    #chatbotBox { display: none; flex-direction: column; position: absolute; bottom: 64px; right: 0; width: 320px; height: 420px; background: #fff; border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); overflow: hidden; border: 1px solid rgba(255,255,255,0.8); }
+    #chatbotHeader { background: linear-gradient(135deg,#667eea,#764ba2); padding: 1rem; color: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    #chatbotMessages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; background: #f8f9ff; }
+    .bot-msg { background: #fff; border-radius: 12px 12px 12px 4px; padding: 0.7rem 0.9rem; font-size: 0.85rem; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-width: 90%; line-height: 1.5; }
+    .user-msg { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border-radius: 12px 12px 4px 12px; padding: 0.7rem 0.9rem; font-size: 0.85rem; align-self: flex-end; max-width: 85%; }
+    #chatbotInput { display: flex; gap: 0.5rem; padding: 0.8rem; background: #fff; border-top: 1px solid #f0f0f0; flex-shrink: 0; }
+    #chatInput { flex: 1; border: 1.5px solid #e0e0f0; border-radius: 50px; padding: 0.5rem 1rem; font-size: 0.85rem; outline: none; }
+    #chatInput:focus { border-color: #667eea; }
+    #chatSend { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#667eea,#764ba2); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+    #chatSend:hover { transform: scale(1.1); }
+  </style>
+
+  <script>
+    const chatbotToggle = document.getElementById('chatbotToggle');
+    const chatbotBox    = document.getElementById('chatbotBox');
+    const chatInput     = document.getElementById('chatInput');
+    const chatMessages  = document.getElementById('chatbotMessages');
+    const chatSend      = document.getElementById('chatSend');
+
+    chatbotToggle.addEventListener('click', () => {
+      chatbotBox.style.display = chatbotBox.style.display === 'flex' ? 'none' : 'flex';
+      if (chatbotBox.style.display === 'flex') chatInput.focus();
+    });
+
+    function addMsg(text, type) {
+      const div = document.createElement('div');
+      div.className = type === 'user' ? 'user-msg' : 'bot-msg';
+      div.innerHTML = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendChat() {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+      addMsg(msg, 'user');
+      chatInput.value = '';
+      addMsg('<i class="fa-solid fa-circle-notch fa-spin"></i> Thinking...', 'bot');
+      try {
+        const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg }) });
+        const data = await res.json();
+        chatMessages.lastChild.remove();
+        addMsg(data.reply, 'bot');
+        if (data.action === 'redirect' && data.url) setTimeout(() => { window.location.href = data.url; }, 1500);
+        if (window.chatVoiceEnabled && window.voiceBotSpeak) window.voiceBotSpeak(data.reply);
+      } catch(e) {
+        chatMessages.lastChild.remove();
+        addMsg('Sorry, I encountered an error. Please try again.', 'bot');
+      }
+    }
+
+    chatSend.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+    window.chatVoiceEnabled = true;
+    window.toggleChatVoice = function() {
+      window.chatVoiceEnabled = !window.chatVoiceEnabled;
+      const btn = document.getElementById('chatVoiceToggle');
+      if (btn) {
+        btn.innerHTML = window.chatVoiceEnabled
+          ? '<i class="fa-solid fa-volume-high"></i>'
+          : '<i class="fa-solid fa-volume-xmark"></i>';
+        btn.style.background = window.chatVoiceEnabled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)';
+        btn.style.opacity = window.chatVoiceEnabled ? '1' : '0.5';
+        btn.title = window.chatVoiceEnabled ? 'Voice ON — click to mute' : 'Voice OFF — click to unmute';
+      }
+      if (!window.chatVoiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  </script>
+<script>
+  function toggleSidebar() {
+    if (window.innerWidth <= 768) {
+      document.getElementById('adminSidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+  }
+  // Re-check on resize — if going desktop, force sidebar open
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      document.getElementById('adminSidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('open');
+    }
+  });
+  // Auto-dismiss alerts
+  setTimeout(() => {
+    document.querySelectorAll('.admin-flash .alert').forEach(a => {
+      a.classList.remove('show');
+      setTimeout(() => a.remove(), 300);
+    });
+  }, 4000);
+</script>
+</body>
+</html>

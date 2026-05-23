@@ -1,0 +1,73 @@
+<% layout(isAdmin || isLibrarian ? "/layouts/admin" : "/layouts/boilerplate") %>
+
+<div class="d-flex align-items-center justify-content-between mb-4 mt-2 anim-down">
+  <div>
+    <h2 class="section-title mb-1"><i class="fa-solid fa-tablet-screen-button me-2"></i>Digital E-Book Library</h2>
+    <p style="color:#888;font-size:0.9rem;">Read and download digital books from our collection</p>
+  </div>
+  <% if (isAdmin) { %>
+  <a href="/ebooks/upload" class="btn btn-grad"><i class="fa-solid fa-upload me-2"></i>Upload E-Book</a>
+  <% } %>
+</div>
+
+<!-- Search & Filter -->
+<div class="glass-card p-3 mb-4 anim-down" style="animation-delay:0.1s;">
+  <form method="GET" action="/ebooks" class="d-flex gap-2 flex-wrap align-items-center">
+    <input type="text" name="search" class="form-control" style="max-width:280px;border-radius:50px;" placeholder="Search e-books..." value="<%= search || '' %>" />
+    <select name="category" class="form-select" style="max-width:180px;border-radius:50px;">
+      <option value="">All Categories</option>
+      <% ['Fiction','Non-Fiction','Science','Technology','History','Biography','Self-Help','Business','Education','Programming','Mathematics','Literature','Philosophy','Other'].forEach(cat => { %>
+      <option value="<%= cat %>" <%= category === cat ? 'selected' : '' %>><%= cat %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-grad" style="padding:0.5rem 1.2rem;"><i class="fa-solid fa-search me-1"></i>Search</button>
+    <% if (search || category) { %><a href="/ebooks" class="btn btn-sm btn-outline-secondary" style="border-radius:50px;">Clear</a><% } %>
+  </form>
+</div>
+
+<% if (!ebooks || !ebooks.docs || ebooks.docs.length === 0) { %>
+<div class="glass-card p-5 text-center anim-up">
+  <div style="font-size:3rem;margin-bottom:1rem;">??</div>
+  <h5 style="color:#555;font-weight:600;">No e-books yet</h5>
+  <p style="color:#aaa;font-size:0.9rem;">The digital library is being built. Check back soon!</p>
+</div>
+<% } else { %>
+<div class="row g-4 anim-up">
+  <% for (let book of ebooks.docs) { %>
+  <div class="col-md-6 col-lg-3">
+    <div class="glass-card overflow-hidden h-100" style="transition:all 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform=''">
+      <% if (book.coverImage && book.coverImage.url) { %>
+      <img src="<%= book.coverImage.url %>" alt="<%= book.title %>" style="width:100%;height:160px;object-fit:cover;" />
+      <% } else { %>
+      <div style="width:100%;height:160px;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;font-size:3rem;color:rgba(255,255,255,0.5);">??</div>
+      <% } %>
+      <div class="p-3">
+        <span style="font-size:0.72rem;font-weight:700;background:rgba(102,126,234,0.1);color:#667eea;padding:0.2rem 0.6rem;border-radius:50px;"><%= book.category %></span>
+        <h6 style="font-weight:700;color:#1a1a2e;margin:0.6rem 0 0.3rem;font-size:0.9rem;"><%= book.title %></h6>
+        <p style="font-size:0.8rem;color:#888;margin-bottom:0.8rem;"><i class="fa-solid fa-user me-1" style="color:#667eea;"></i><%= book.author %></p>
+        <div style="font-size:0.75rem;color:#aaa;margin-bottom:0.8rem;">
+          <i class="fa-solid fa-download me-1"></i><%= book.downloads %> downloads
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/ebooks/<%= book._id %>" class="btn btn-sm flex-fill" style="border-radius:50px;background:rgba(102,126,234,0.1);color:#667eea;border:1px solid rgba(102,126,234,0.2);font-size:0.8rem;">View</a>
+          <a href="/ebooks/<%= book._id %>/download" class="btn btn-sm flex-fill btn-grad" style="font-size:0.8rem;"><i class="fa-solid fa-download me-1"></i>Download</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<!-- Pagination -->
+<% if (ebooks.totalPages > 1) { %>
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    <% for (let i = 1; i <= ebooks.totalPages; i++) { %>
+    <li class="page-item <%= i === ebooks.page ? 'active' : '' %>">
+      <a class="page-link" href="?page=<%= i %><%= category ? '&category=' + category : '' %><%= search ? '&search=' + search : '' %>"><%= i %></a>
+    </li>
+    <% } %>
+  </ul>
+</nav>
+<% } %>
+<% } %>
