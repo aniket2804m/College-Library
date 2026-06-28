@@ -1,13 +1,5 @@
 <% layout("/layouts/admin") %>
 
-<div class="anim-down mb-4 d-flex justify-content-between align-items-center">
-  <div>
-    <h2 class="section-title mb-1"><i class="fa-solid fa-qrcode me-2"></i>QR Code Generator</h2>
-    <p style="color:#888;font-size:0.9rem;">Generate QR codes for books to use with the scanner</p>
-  </div>
-  <a href="/qr/scanner" class="btn btn-grad"><i class="fa-solid fa-camera me-2"></i>Open Scanner</a>
-</div>
-
 <div class="row g-4">
   <!-- Generator Panel -->
   <div class="col-lg-5">
@@ -22,7 +14,7 @@
       <div id="bookList" style="max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
         <% books.forEach(book => { %>
         <div class="book-item" data-title="<%= book.title.toLowerCase() %>"
-          onclick="selectBook('<%= book._id %>', '<%= book.title.replace(/'/g, "\\'") %>', '<%= (book.author || '').replace(/'/g, "\\'") %>')"
+          onclick="selectBook(event, '<%= book._id %>', '<%= book.title.replace(/'/g, "\\'") %>', '<%= (book.author || '').replace(/'/g, "\\'") %>')"
           style="padding:0.7rem 1rem;border-radius:10px;cursor:pointer;border:2px solid transparent;
                  background:rgba(102,126,234,0.04);transition:all 0.2s;"
           onmouseover="this.style.background='rgba(102,126,234,0.1)'"
@@ -81,6 +73,15 @@
 
 <script src="/js/chart.umd.min.js"></script>
 <script>
+
+  const bookImages = {
+  "Artificial Intelligence: A Modern Approach": "/images/python.jpeg",
+  "C Programming Language (K&R)": "/images/c.jpeg",
+  "Clean Code": "/images/clean.jpeg",
+  "The Pragmatic Programmer": "/images/pragmatic-programmer.jpg"
+};
+
+
   let selectedBookId = null;
   let selectedBookTitle = '';
 
@@ -91,7 +92,7 @@
     });
   }
 
-  function selectBook(id, title, author) {
+  function selectBook(event, id, title, author) {
     // Deselect previous
     document.querySelectorAll('.book-item').forEach(el => {
       el.classList.remove('selected');
@@ -106,8 +107,42 @@
 
     selectedBookId = id;
     selectedBookTitle = title;
-    generateQR(id, title, author);
+    showBookImage(title, author);
   }
+
+  function showBookImage(title, author) {
+
+  const imageUrl =
+    bookImages[title] || "/images/default-book.jpg";
+
+  document.getElementById('qrPlaceholder').style.display = 'none';
+  document.getElementById('qrLoading').style.display = 'none';
+
+  document.getElementById('qrResult').innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-weight:700;font-size:1.1rem;">
+        ${title}
+      </div>
+
+      <div style="font-size:0.85rem;color:#888;margin-bottom:15px;">
+        ${author || "Unknown author"}
+      </div>
+
+      <img
+        src="${imageUrl}"
+        alt="${title}"
+        style="
+          max-width:300px;
+          width:100%;
+          border-radius:16px;
+          box-shadow:0 4px 20px rgba(0,0,0,.15);
+        "
+      />
+    </div>
+  `;
+
+  document.getElementById('qrResult').style.display = 'block';
+}
 
   async function generateQR(bookId, title, author) {
     document.getElementById('qrPlaceholder').style.display = 'none';
@@ -148,28 +183,5 @@
     }
   }
 
-  function downloadQR() {
-    const canvas = document.getElementById('qrCanvas');
-    const link = document.createElement('a');
-    link.download = `qr-${selectedBookTitle.replace(/\s+/g, '-').toLowerCase()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
 
-  function printQR() {
-    const canvas = document.getElementById('qrCanvas');
-    const win = window.open('', '_blank');
-    win.document.write(`
-      <html><head><title>QR - ${selectedBookTitle}</title>
-      <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;gap:1rem;}
-      h2{font-size:1.2rem;color:#1a1a2e;}</style></head>
-      <body>
-        <h2>${selectedBookTitle}</h2>
-        <img src="${canvas.toDataURL()}" style="max-width:300px;" />
-        <p style="color:#888;font-size:0.85rem;">Scan to borrow/return</p>
-        <script>window.onload=()=>window.print()<\/script>
-      </body></html>
-    `);
-    win.document.close();
-  }
 </script>
